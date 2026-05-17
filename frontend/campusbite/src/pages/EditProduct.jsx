@@ -16,18 +16,25 @@ function EditProduct() {
     description: "",
     image: ""
   });
+  const [loading, setLoading] = useState(true);
 
   const fetchProduct = async () => {
     try {
 
-      const res = await API.get(`/products`);
+      const res = await API.get(`/products/${id}`);
 
-      const product = res.data.find((item) => item._id === id);
-
-      setFormData(product);
+      setFormData({
+        name: res.data.name || "",
+        price: res.data.price || "",
+        category: res.data.category || "",
+        description: res.data.description || "",
+        image: res.data.image || ""
+      });
 
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,6 +62,10 @@ function EditProduct() {
       console.log(error);
     }
   };
+
+  if (loading) {
+    return <p>Loading product...</p>;
+  }
 
   return (
     <div className="max-w-2xl mx-auto bg-[#2c1b12] p-8 rounded-2xl shadow-lg border border-yellow-700">

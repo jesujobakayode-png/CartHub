@@ -15,6 +15,26 @@ export const getProducts = async (req, res) => {
   }
 };
 
+// GET SINGLE PRODUCT
+export const getProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found"
+      });
+    }
+
+    res.status(200).json(product);
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+
 
 
 // CREATE PRODUCT
@@ -44,6 +64,12 @@ export const updateProduct = async (req, res) => {
       { new: true }
     );
 
+    if (!updatedProduct) {
+      return res.status(404).json({
+        message: "Product not found"
+      });
+    }
+
     res.status(200).json(updatedProduct);
 
   } catch (error) {
@@ -59,7 +85,13 @@ export const updateProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
   try {
 
-    await Product.findByIdAndDelete(req.params.id);
+    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+
+    if (!deletedProduct) {
+      return res.status(404).json({
+        message: "Product not found"
+      });
+    }
 
     res.status(200).json({
       message: "Product deleted successfully"
