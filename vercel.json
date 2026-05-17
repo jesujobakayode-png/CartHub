@@ -1,0 +1,11 @@
+{
+  "installCommand": "npm --prefix frontend/campusbite install",
+  "buildCommand": "npm --prefix frontend/campusbite run build",
+  "outputDirectory": "frontend/campusbite/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
