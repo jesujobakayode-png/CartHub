@@ -13,10 +13,13 @@ function Home() {
 
       const res = await API.get("/products");
 
-      setProducts(res.data);
+      const productList = Array.isArray(res.data) ? res.data : res.data?.value;
+
+      setProducts(Array.isArray(productList) ? productList : []);
 
     } catch (error) {
       console.log(error);
+      setProducts([]);
     }
   };
 
