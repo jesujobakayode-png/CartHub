@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 
 import connectDB from "./config/db.js";
 import productRoutes from "./routes/productRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
     message: "CampusBite API is running",
     routes: {
       products: "/api/products",
+      orders: "/api/orders",
       health: "/api/health"
     }
   });
@@ -30,6 +32,7 @@ app.get("/api", (req, res) => {
     message: "CampusBite API is running",
     routes: {
       products: "/api/products",
+      orders: "/api/orders",
       health: "/api/health"
     }
   });
@@ -54,5 +57,6 @@ const requireDB = async (req, res, next) => {
 };
 
 app.use("/api/products", requireDB, productRoutes);
+app.use("/api/orders", requireDB, orderRoutes);
 
 export default app;

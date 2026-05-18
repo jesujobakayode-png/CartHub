@@ -1,10 +1,10 @@
 import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
-
 import Home from "./pages/Home";
-import AddProduct from "./pages/AddProduct";
-import EditProduct from "./pages/EditProduct";
+import Cart from "./pages/Cart";
+import VendorDashboard from "./pages/VendorDashboard";
+import Orders from "./pages/Orders";
 
 function App() {
   return (
@@ -15,8 +15,9 @@ function App() {
       <div className="max-w-7xl mx-auto px-4 py-6">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/add-product" element={<AddProduct />} />
-          <Route path="/edit-product/:id" element={<EditProduct />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/vendor-dashboard" element={<VendorDashboard />} />
         </Routes>
       </div>
 

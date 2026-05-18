@@ -1,7 +1,10 @@
-import { Link } from "react-router-dom";
 import API from "../services/api";
+import { useContext } from "react";
+import { CartContext } from "../context/CartContext";
 
-function ProductCard({ product, fetchProducts }) {
+function ProductCard({ product, fetchProducts, isVendor = false, onEdit }) {
+  const { addToCart } = useContext(CartContext);
+
   const handleDelete = async () => {
     try {
       await API.delete(`/products/${product._id}`);
@@ -36,21 +39,30 @@ function ProductCard({ product, fetchProducts }) {
 
         <p className="text-gray-300 mt-3 text-sm">{product.description}</p>
 
-        <div className="flex gap-3 mt-5">
-          <Link
-            to={`/edit-product/${product._id}`}
-            className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-center py-2 rounded-lg font-semibold text-black transition"
-          >
-            Edit
-          </Link>
+        {isVendor ? (
+          <div className="flex gap-3 mt-5">
+            <button
+              onClick={() => onEdit(product)}
+              className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-center py-2 rounded-lg font-semibold text-black transition"
+            >
+              Edit
+            </button>
 
+            <button
+              onClick={handleDelete}
+              className="flex-1 bg-red-600 hover:bg-red-500 py-2 rounded-lg font-semibold transition"
+            >
+              Delete
+            </button>
+          </div>
+        ) : (
           <button
-            onClick={handleDelete}
-            className="flex-1 bg-red-600 hover:bg-red-500 py-2 rounded-lg font-semibold transition"
+            onClick={() => addToCart(product)}
+            className="w-full mt-4 bg-yellow-600 hover:bg-yellow-400 text-black py-2 rounded-lg font-bold transition"
           >
-            Delete
+            Add To Cart
           </button>
-        </div>
+        )}
       </div>
     </div>
   );
