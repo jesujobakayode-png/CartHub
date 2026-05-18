@@ -1,7 +1,17 @@
 import mongoose from "mongoose";
 
+let connectionPromise;
+
 const connectDB = async () => {
   try {
+    if (mongoose.connection.readyState === 1) {
+      return mongoose.connection;
+    }
+
+    if (connectionPromise) {
+      return connectionPromise;
+    }
+
     const mongoUri = process.env.MONGO_URI?.trim().replace(/^['"]|['"]$/g, "");
 
     if (!mongoUri) {
@@ -12,17 +22,19 @@ const connectDB = async () => {
       throw new Error('MONGO_URI must start with "mongodb://" or "mongodb+srv://"');
     }
 
-    await mongoose.connect(mongoUri, {
+    connectionPromise = mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 10000,
     });
 
+    await connectionPromise;
+
     console.log("MongoDB Connected");
+    return mongoose.connection;
 
   } catch (error) {
 
-    console.error("MongoDB connection failed:", error.message);
-
-    process.exit(1);
+    connectionPromise = undefined;
+    throw error;
   }
 };
 
