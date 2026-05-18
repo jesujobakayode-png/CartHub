@@ -78,10 +78,10 @@ function VendorDashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#120b08] text-white">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#120b08] text-white">
       
       {/* SIDEBAR */}
-      <div className="w-56 bg-[#1c120d] border-r border-yellow-700 p-5 sticky top-20 h-[calc(100vh-5rem)] self-start">
+      <div className="w-full md:w-56 bg-[#1c120d] border-b md:border-b-0 md:border-r border-yellow-700 p-5 md:sticky top-20 md:h-[calc(100vh-5rem)] self-start">
         <h1 className="text-xl font-bold text-yellow-500 mb-10">
           Vendor Panel
         </h1>
@@ -117,7 +117,7 @@ function VendorDashboard() {
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-4 md:p-8">
 
         {/* STATS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">

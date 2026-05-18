@@ -6,12 +6,12 @@ function CartItem({
 }) {
 
   return (
-    <div className="bg-[#2c1b12] border border-yellow-700 rounded-2xl p-4 flex gap-4">
+    <div className="bg-[#2c1b12] border border-yellow-700 rounded-2xl p-4 flex flex-col md:flex-row gap-4">
 
       <img
         src={item.image}
         alt={item.name}
-        className="w-28 h-28 object-cover rounded-xl"
+        className="w-full md:w-28 h-28 object-cover rounded-xl"
       />
 
       <div className="flex-1">
@@ -48,7 +48,7 @@ function CartItem({
 
       <button
         onClick={() => removeFromCart(item._id)}
-        className="bg-red-600 px-4 rounded-lg"
+        className="bg-red-600 px-4 rounded-lg self-start md:self-auto"
       >
         Remove
       </button>

@@ -41,7 +41,7 @@ function Orders() {
             className="bg-[#2c1b12] border border-yellow-700 rounded-2xl p-6"
           >
 
-            <div className="flex justify-between mb-5">
+            <div className="flex flex-col sm:flex-row sm:justify-between mb-5 gap-2">
 
               <h2 className="text-2xl font-bold text-yellow-500">
                 {order.status}
@@ -58,7 +58,7 @@ function Orders() {
               {order.items.map((item) => (
                 <div
                   key={item.productId}
-                  className="flex justify-between"
+                  className="flex flex-col sm:flex-row sm:justify-between gap-2"
                 >
                   <p>
                     {item.name} x {item.quantity}
