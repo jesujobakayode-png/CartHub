@@ -1,12 +1,8 @@
 {
-  "installCommand": "npm --prefix backend install --omit=dev && npm --prefix frontend/campusbite install --include=dev",
+  "installCommand": "npm --prefix frontend/campusbite install --include=dev",
   "buildCommand": "npm --prefix frontend/campusbite run build",
   "outputDirectory": "frontend/campusbite/dist",
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
