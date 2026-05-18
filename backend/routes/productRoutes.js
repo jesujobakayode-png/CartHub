@@ -8,6 +8,9 @@ import {
   deleteProduct
 } from "../controllers/productController.js";
 
+import { protect } from "../middleware/authMiddleware.js";
+import { vendorOnly } from "../middleware/roleMiddleware.js";
+
 const router = express.Router();
 
 
@@ -19,16 +22,16 @@ router.get("/", getProducts);
 router.get("/:id", getProduct);
 
 
-// CREATE PRODUCT
-router.post("/", createProduct);
+// ONLY VENDOR CAN CREATE
+router.post("/", protect, vendorOnly, createProduct);
 
 
-// UPDATE PRODUCT
-router.put("/:id", updateProduct);
+// ONLY VENDOR CAN UPDATE
+router.put("/:id", protect, vendorOnly, updateProduct);
 
 
-// DELETE PRODUCT
-router.delete("/:id", deleteProduct);
+// ONLY VENDOR CAN DELETE
+router.delete("/:id", protect, vendorOnly, deleteProduct);
 
 
 export default router;

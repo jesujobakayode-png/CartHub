@@ -1,9 +1,27 @@
 import API from "../services/api";
 import { useContext } from "react";
 import { CartContext } from "../context/CartContext";
+import { AuthContext } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+
+
 
 function ProductCard({ product, fetchProducts, isVendor = false, onEdit }) {
   const { addToCart } = useContext(CartContext);
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleAddToCart = () => {
+
+  if (!user) {
+
+    navigate("/login");
+
+    return;
+  }
+
+  addToCart(product);
+};
 
   const handleDelete = async () => {
     try {
@@ -57,7 +75,7 @@ function ProductCard({ product, fetchProducts, isVendor = false, onEdit }) {
           </div>
         ) : (
           <button
-            onClick={() => addToCart(product)}
+            onClick={handleAddToCart}
             className="w-full mt-4 bg-yellow-600 hover:bg-yellow-400 text-black py-2 rounded-lg font-bold transition"
           >
             Add To Cart

@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import productRoutes from "./routes/productRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 
@@ -58,5 +59,5 @@ const requireDB = async (req, res, next) => {
 
 app.use("/api/products", requireDB, productRoutes);
 app.use("/api/orders", requireDB, orderRoutes);
-
+app.use("/api/auth", requireDB, authRoutes);
 export default app;
