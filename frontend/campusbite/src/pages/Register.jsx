@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import API from "../services/api";
@@ -50,6 +50,27 @@ function Register() {
       if (showToast) showToast({ message, type: "error" });
     }
   };
+
+  const [apiHealthy, setApiHealthy] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    API.get('/health')
+      .then(() => {
+        if (mounted) setApiHealthy(true);
+      })
+      .catch((err) => {
+        if (mounted) {
+          setApiHealthy(false);
+          console.error('API health check failed', err?.response || err);
+          if (showToast) showToast({ message: 'API unreachable — registration may fail', type: 'error' });
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
 
   return (
