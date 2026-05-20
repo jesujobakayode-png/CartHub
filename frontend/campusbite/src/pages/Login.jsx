@@ -48,8 +48,9 @@ function Login() {
       }
 
     } catch (error) {
-      console.log(error);
-      if (showToast) showToast({ message: "Invalid credentials", type: "error" });
+      console.log(error.response || error);
+      const message = error.response?.data?.message || "Invalid credentials";
+      if (showToast) showToast({ message, type: "error" });
     }
   };
 
