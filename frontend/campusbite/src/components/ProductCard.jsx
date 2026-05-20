@@ -2,6 +2,7 @@ import API from "../services/api";
 import { useContext } from "react";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
+import { ToastContext } from "../context/ToastContext";
 import { useNavigate } from "react-router-dom";
 
 
@@ -9,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 function ProductCard({ product, fetchProducts, isVendor = false, onEdit }) {
   const { addToCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
+  const { showToast } = useContext(ToastContext);
   const navigate = useNavigate();
 
   const handleAddToCart = () => {
@@ -21,6 +23,8 @@ function ProductCard({ product, fetchProducts, isVendor = false, onEdit }) {
   }
 
   addToCart(product);
+
+  if (showToast) showToast({ message: "Item added successfully", type: "success" });
 };
 
   const handleDelete = async () => {

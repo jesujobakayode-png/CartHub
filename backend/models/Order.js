@@ -2,13 +2,18 @@ import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema(
   {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
     items: [
       {
-        productId: String,
         name: String,
-        image: String,
         price: Number,
         quantity: Number,
+        image: String,
       },
     ],
 
@@ -19,7 +24,14 @@ const orderSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      default: "Pending",
+      enum: [
+        "pending",
+        "preparing",
+        "out-for-delivery",
+        "delivered",
+        "cancelled",
+      ],
+      default: "pending",
     },
   },
   {
@@ -27,6 +39,9 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-const Order = mongoose.model("Order", orderSchema);
+const Order = mongoose.model(
+  "Order",
+  orderSchema
+);
 
 export default Order;

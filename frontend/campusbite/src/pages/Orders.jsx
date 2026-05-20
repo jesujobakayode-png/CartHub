@@ -11,7 +11,7 @@ function Orders() {
 
     try {
 
-      const res = await API.get("/orders");
+      const res = await API.get("/orders/my-orders");
 
       setOrders(res.data);
 

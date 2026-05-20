@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   FaHome,
   FaUtensils,
@@ -12,21 +12,19 @@ import { AuthContext } from "../context/AuthContext";
 
 function Navbar() {
 
-  const { cart } = useContext(CartContext);
-
   const { user, logout } =
     useContext(AuthContext);
 
   const navigate = useNavigate();
 
 
+  const { cart, clearCart } = useContext(CartContext);
+
   const handleLogout = () => {
-
-    logout();
-
-    navigate("/login");
+  clearCart();
+  logout();
+  navigate("/login");
   };
-
 
   return (
     <nav className="sticky top-0 z-50 bg-[#2c1b12] border-b border-yellow-700 shadow-lg">
@@ -61,17 +59,28 @@ function Navbar() {
 
 
           {/* VENDOR DASHBOARD */}
-          {user?.user?.role === "vendor" && (
-
-            <Link
-              to="/vendor"
-              className="bg-yellow-600 hover:bg-yellow-500 transition px-4 py-2 rounded-lg font-semibold text-black"
+          {user?.role === "vendor" && (
+            <NavLink
+              to="/vendor-dashboard"
+              className={({ isActive }) =>
+                `px-4 py-2 rounded-lg font-semibold transition ${isActive ? "bg-yellow-400 text-black" : "bg-yellow-600 hover:bg-yellow-500 text-black"}`
+              }
             >
               Vendor Dashboard
-            </Link>
-
+            </NavLink>
           )}
 
+          {/* BUYER DASHBOARD */}
+          {user && user?.role !== "vendor" && (
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                `px-4 py-2 rounded-lg font-semibold transition ${isActive ? "bg-yellow-400 text-black" : "bg-yellow-600 hover:bg-yellow-500 text-black"}`
+              }
+            >
+              Dashboard
+            </NavLink>
+          )}
 
           {/* CART */}
           <Link
@@ -119,9 +128,7 @@ function Navbar() {
             <div className="flex items-center gap-3">
 
               <p className="text-yellow-400 font-semibold">
-
-                Hi, {user.user.name}
-
+                Hi, {user?.user?.name || user?.name}
               </p>
 
               <button

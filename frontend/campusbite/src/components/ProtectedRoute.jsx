@@ -4,13 +4,19 @@ function ProtectedRoute({
   children,
   user,
   role,
+  loading,
 }) {
+  if (loading) {
+    return null;
+  }
 
   if (!user) {
     return <Navigate to="/login" />;
   }
 
-  if (role && user.user.role !== role) {
+  const actualRole = user?.user?.role || user?.role;
+
+  if (role && actualRole !== role) {
     return <Navigate to="/" />;
   }
 
