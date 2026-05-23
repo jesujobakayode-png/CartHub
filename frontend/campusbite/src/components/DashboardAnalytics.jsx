@@ -84,43 +84,58 @@ function DashboardAnalytics({ orders = [], products = [] }) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <div>
+        <h2 className="mb-4 text-xl font-bold text-yellow-500 sm:text-2xl">
+          Analytics
+        </h2>
+      </div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <div className="bg-[#2c1b12] border border-yellow-700 rounded-2xl p-6">
-          <h2 className="text-gray-400 mb-2">Revenue</h2>
-          <p className="text-3xl font-bold text-yellow-500">₦{totalRevenue}</p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl border border-yellow-700 bg-[#2c1b12] p-5">
+          <h3 className="mb-2 text-sm text-gray-400">Revenue</h3>
+          <p className="break-words text-2xl font-bold text-yellow-500 sm:text-3xl">
+            NGN {totalRevenue}
+          </p>
         </div>
 
-        <div className="bg-[#2c1b12] border border-yellow-700 rounded-2xl p-6">
-          <h2 className="text-gray-400 mb-2">Orders</h2>
-          <p className="text-3xl font-bold text-yellow-500">{totalOrders}</p>
+        <div className="rounded-xl border border-yellow-700 bg-[#2c1b12] p-5">
+          <h3 className="mb-2 text-sm text-gray-400">Orders</h3>
+          <p className="text-2xl font-bold text-yellow-500 sm:text-3xl">
+            {totalOrders}
+          </p>
         </div>
 
-        <div className="bg-[#2c1b12] border border-yellow-700 rounded-2xl p-6">
-          <h2 className="text-gray-400 mb-2">Pending</h2>
-          <p className="text-3xl font-bold text-yellow-500">{pendingOrders}</p>
+        <div className="rounded-xl border border-yellow-700 bg-[#2c1b12] p-5">
+          <h3 className="mb-2 text-sm text-gray-400">Pending</h3>
+          <p className="text-2xl font-bold text-yellow-500 sm:text-3xl">
+            {pendingOrders}
+          </p>
         </div>
 
-        <div className="bg-[#2c1b12] border border-yellow-700 rounded-2xl p-6">
-          <h2 className="text-gray-400 mb-2">Products</h2>
-          <p className="text-3xl font-bold text-yellow-500">{products.length}</p>
+        <div className="rounded-xl border border-yellow-700 bg-[#2c1b12] p-5">
+          <h3 className="mb-2 text-sm text-gray-400">Products</h3>
+          <p className="text-2xl font-bold text-yellow-500 sm:text-3xl">
+            {products.length}
+          </p>
         </div>
       </div>
 
-      {/* CHARTS */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <div className="bg-[#2c1b12] border border-yellow-700 rounded-2xl p-6 h-105">
-          <h2 className="text-2xl font-bold text-yellow-500 mb-6">Revenue Analytics</h2>
-          <div className="h-85">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="rounded-xl border border-yellow-700 bg-[#2c1b12] p-4 sm:p-6">
+          <h3 className="mb-4 text-lg font-bold text-yellow-500 sm:text-xl">
+            Revenue Analytics
+          </h3>
+          <div className="h-64 sm:h-80">
             <Bar data={revenueData} options={revenueOptions} />
           </div>
         </div>
 
-        <div className="bg-[#2c1b12] border border-yellow-700 rounded-2xl p-6 h-105">
-          <h2 className="text-2xl font-bold text-yellow-500 mb-6">Order Status</h2>
-          <div className="h-85">
+        <div className="rounded-xl border border-yellow-700 bg-[#2c1b12] p-4 sm:p-6">
+          <h3 className="mb-4 text-lg font-bold text-yellow-500 sm:text-xl">
+            Order Status
+          </h3>
+          <div className="h-64 sm:h-80">
             <Pie data={statusData} options={statusOptions} />
           </div>
         </div>

@@ -14,6 +14,7 @@ function Cart() {
     decreaseQty,
     clearCart,
   } = useContext(CartContext);
+
   const { showToast } = useContext(ToastContext);
 
   const totalPrice = cart.reduce(
@@ -69,16 +70,28 @@ function Cart() {
 
   return (
     <div>
-      <h1 className="text-4xl font-bold text-yellow-500 mb-8">Your Cart</h1>
+      <h1 className="mb-8 text-3xl font-bold text-yellow-500 sm:text-4xl">
+        Your Cart
+      </h1>
 
       {cart.length === 0 ? (
-        <div className="bg-[#2c1b12] border border-yellow-700 rounded-2xl p-10 text-center">
-          <h2 className="text-2xl text-yellow-500 font-bold">Your cart is empty</h2>
-          <p className="text-gray-300 mt-3">Add delicious meals from vendors.</p>
+        <div className="rounded-2xl border border-yellow-700 bg-[#2c1b12] p-8 text-center shadow-2xl sm:p-12">
+          <div className="mb-5 text-4xl font-bold text-yellow-500 sm:text-5xl">
+            Cart
+          </div>
+
+          <h2 className="mb-3 text-2xl font-bold text-yellow-500 sm:text-3xl">
+            Your Cart is Empty
+          </h2>
+
+          <p className="text-gray-400 max-w-md mx-auto leading-relaxed">
+            Looks like you have not added any delicious meals yet. Browse campus
+            vendors and discover amazing food.
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-5">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
+          <div className="space-y-4 lg:col-span-2">
             {cart.map((item) => (
               <CartItem
                 key={item._id}
@@ -90,7 +103,11 @@ function Cart() {
             ))}
           </div>
 
-          <CheckoutSummary cart={cart} totalPrice={totalPrice} placeOrder={placeOrder} />
+          <CheckoutSummary
+            cart={cart}
+            totalPrice={totalPrice}
+            placeOrder={placeOrder}
+          />
         </div>
       )}
     </div>

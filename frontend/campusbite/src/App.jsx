@@ -14,6 +14,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
+import MyOrders from "./pages/MyOrders";
+
+
 
 function App() {
   const { user, loading } = useContext(AuthContext);
@@ -23,7 +26,7 @@ function App() {
 
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-6">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/cart" element={<Cart />} />
@@ -49,9 +52,15 @@ function App() {
               <VendorOrders />
             </ProtectedRoute>
             } />
+          <Route
+              path="/my-orders"
+              element={
+                <ProtectedRoute user={user} loading={loading}>
+                  <MyOrders />
+                </ProtectedRoute>
+            } />
         </Routes>
       </div>
-
     </div>
   );
 }

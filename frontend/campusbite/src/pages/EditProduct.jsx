@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import API from "../services/api";
@@ -18,7 +18,7 @@ function EditProduct() {
   });
   const [loading, setLoading] = useState(true);
 
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     try {
 
       const res = await API.get(`/products/${id}`);
@@ -36,11 +36,11 @@ function EditProduct() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchProduct();
-  }, []);
+  }, [fetchProduct]);
 
   const handleChange = (e) => {
     setFormData({

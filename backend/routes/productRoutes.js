@@ -3,6 +3,7 @@ import express from "express";
 import {
   getProducts,
   getProduct,
+  getVendorProducts,
   createProduct,
   updateProduct,
   deleteProduct
@@ -18,20 +19,42 @@ const router = express.Router();
 router.get("/", getProducts);
 
 
+// GET PRODUCTS FOR LOGGED-IN VENDOR
+router.get(
+  "/vendor/my-products",
+  protect,
+  vendorOnly,
+  getVendorProducts
+);
+
+
 // GET SINGLE PRODUCT
 router.get("/:id", getProduct);
 
 
 // ONLY VENDOR CAN CREATE
-router.post("/", protect, vendorOnly, createProduct);
-
+router.post(
+  "/",
+  protect,
+  vendorOnly,
+  createProduct
+);
 
 // ONLY VENDOR CAN UPDATE
-router.put("/:id", protect, vendorOnly, updateProduct);
+router.put(
+  "/:id",
+  protect,
+  vendorOnly,
+  updateProduct
+);
 
 
 // ONLY VENDOR CAN DELETE
-router.delete("/:id", protect, vendorOnly, deleteProduct);
-
+router.delete(
+  "/:id",
+  protect,
+  vendorOnly,
+  deleteProduct
+);
 
 export default router;

@@ -51,34 +51,35 @@ function Register() {
     }
   };
 
-  const [apiHealthy, setApiHealthy] = useState(true);
-
   useEffect(() => {
     let mounted = true;
+
     API.get('/health')
-      .then(() => {
-        if (mounted) setApiHealthy(true);
-      })
+      .then(() => {})
       .catch((err) => {
         if (mounted) {
-          setApiHealthy(false);
           console.error('API health check failed', err?.response || err);
-          if (showToast) showToast({ message: 'API unreachable — registration may fail', type: 'error' });
+          if (showToast) {
+            showToast({
+              message: 'API unreachable - registration may fail',
+              type: 'error',
+            });
+          }
         }
       });
 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [showToast]);
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#120b08] text-white">
+    <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center bg-[#120b08] px-2 py-6 text-white sm:px-4">
 
-      <div className="bg-[#2c1b12] p-8 rounded-2xl border border-yellow-700 w-full max-w-md">
+      <div className="w-full max-w-md rounded-2xl border border-yellow-700 bg-[#2c1b12] p-5 shadow-2xl sm:p-8">
 
-        <h1 className="text-4xl font-bold text-yellow-500 mb-6 text-center">
+        <h1 className="mb-6 text-center text-3xl font-bold text-yellow-500 sm:text-4xl">
           Register
         </h1>
 
@@ -93,7 +94,7 @@ function Register() {
             value={formData.name}
             placeholder="Name"
             onChange={handleChange}
-            className="w-full p-3 rounded-lg bg-[#1c120d] border border-yellow-700"
+            className="min-h-12 w-full rounded-lg border border-yellow-700 bg-[#1c120d] p-3 outline-none transition focus:border-yellow-500"
           />
 
           <input
@@ -102,7 +103,7 @@ function Register() {
             value={formData.email}
             placeholder="Email"
             onChange={handleChange}
-            className="w-full p-3 rounded-lg bg-[#1c120d] border border-yellow-700"
+            className="min-h-12 w-full rounded-lg border border-yellow-700 bg-[#1c120d] p-3 outline-none transition focus:border-yellow-500"
           />
 
           <div className="relative">
@@ -112,7 +113,7 @@ function Register() {
               value={formData.password}
               placeholder="Password"
               onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-[#1c120d] border border-yellow-700 pr-12"
+              className="min-h-12 w-full rounded-lg border border-yellow-700 bg-[#1c120d] p-3 pr-12 outline-none transition focus:border-yellow-500"
             />
             <button
               type="button"
@@ -148,7 +149,7 @@ function Register() {
             name="role"
             value={formData.role}
             onChange={handleChange}
-            className="w-full p-3 rounded-lg bg-[#1c120d] border border-yellow-700"
+            className="min-h-12 w-full rounded-lg border border-yellow-700 bg-[#1c120d] p-3 outline-none transition focus:border-yellow-500"
           >
             <option value="buyer">
               Buyer
@@ -159,17 +160,17 @@ function Register() {
             </option>
           </select>
 
-          <button className="w-full bg-yellow-500 hover:bg-yellow-400 transition text-black py-3 rounded-lg font-bold">
+          <button className="min-h-12 w-full rounded-lg bg-yellow-500 py-3 font-bold text-black transition hover:bg-yellow-400">
             Register
           </button>
 
         </form>
 
-        <p className="mt-5 text-center">
+        <p className="mt-5 text-center text-gray-300">
           Already have an account?{" "}
           <Link
             to="/login"
-            className="text-yellow-500"
+            className="font-semibold text-yellow-500 hover:text-yellow-400"
           >
             Login
           </Link>
