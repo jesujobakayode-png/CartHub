@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
 import { joinRoom, leaveRoom, connectSocket, disconnectSocket } from "../utils/socket";
 
+function getUserId(user) {
+  return user?.id || user?._id || user?.user?.id || user?.user?._id;
+}
+
+function getUserRole(user) {
+  return user?.role || user?.user?.role;
+}
+
 function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
@@ -9,22 +17,24 @@ function AuthProvider({ children }) {
   });
 
   useEffect(() => {
-    // connect and join room if user already logged in
-    if (user) {
-      const token = localStorage.getItem("token");
-      connectSocket(token)
-        .then(() => joinRoom({ userId: user.id, role: user.role }))
-        .catch((e) => console.warn("Socket reconnect failed", e));
+    const userId = getUserId(user);
+    const role = getUserRole(user);
+
+    if (!userId || !role) {
+      disconnectSocket();
+      return;
     }
 
+    const token = localStorage.getItem("token");
+    connectSocket(token)
+      .then(() => joinRoom({ userId, role }))
+      .catch((e) => console.warn("Socket reconnect failed", e));
+
     return () => {
-      if (user) {
-        leaveRoom({ userId: user.id, role: user.role });
-      }
+      leaveRoom({ userId, role });
       disconnectSocket();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   const login = async (userData) => {
     const normalizedUser = {
@@ -35,14 +45,6 @@ function AuthProvider({ children }) {
     localStorage.setItem("user", JSON.stringify(normalizedUser));
     localStorage.setItem("token", userData.token);
     setUser(normalizedUser);
-
-    // connect socket and join appropriate room
-    try {
-      await connectSocket(normalizedUser.token);
-      await joinRoom({ userId: normalizedUser.id, role: normalizedUser.role });
-    } catch (e) {
-      console.warn("Socket join failed", e);
-    }
   };
 
   const logout = () => {
@@ -50,7 +52,7 @@ function AuthProvider({ children }) {
     localStorage.removeItem("token");
     // leave socket room and disconnect
     try {
-      leaveRoom({ userId: user?.id, role: user?.role });
+      leaveRoom({ userId: getUserId(user), role: getUserRole(user) });
       disconnectSocket();
     } catch {
       console.warn("Socket cleanup failed");

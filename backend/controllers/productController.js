@@ -68,7 +68,12 @@ export const createProduct = async (req, res) => {
       vendor: req.user.id,
     });
 
-    res.status(201).json(product);
+    const populatedProduct = await Product.findById(product._id).populate(
+      "vendor",
+      "name email"
+    );
+
+    res.status(201).json(populatedProduct);
 
   } catch (error) {
     res.status(500).json({
@@ -115,7 +120,7 @@ export const updateProduct =
           req.params.id,
           req.body,
           { new: true }
-        );
+        ).populate("vendor", "name email");
 
       res.json(updatedProduct);
 

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { Navigate, NavLink, useNavigate, useParams } from "react-router-dom";
 
 import DashboardAnalytics from "../components/DashboardAnalytics";
@@ -71,15 +71,30 @@ function orderMatchesSearch(order, vendorItems, searchTerm) {
   return searchable.includes(needle);
 }
 
+function getCurrentUserId(user) {
+  return user?.id || user?._id || user?.user?.id || user?.user?._id;
+}
+
+function getCurrentUserRole(user) {
+  return user?.role || user?.user?.role;
+}
+
+function getProductVendorId(product) {
+  return typeof product.vendor === "string" ? product.vendor : product.vendor?._id;
+}
+
 function VendorDashboard() {
   const { section } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const { showToast } = useContext(ToastContext);
-  const actualRole = user?.user?.role || user?.role;
+  const actualRole = getCurrentUserRole(user);
+  const currentUserId = getCurrentUserId(user);
 
   const activePage = section || "dashboard";
   const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState("");
   const [orders, setOrders] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [editingProductId, setEditingProductId] = useState(null);
@@ -88,7 +103,10 @@ function VendorDashboard() {
   const [orderSearch, setOrderSearch] = useState("");
   const [submittedOrderSearch, setSubmittedOrderSearch] = useState("");
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
+    setProductsLoading(true);
+    setProductsError("");
+
     try {
       const res = await API.get("/products/vendor/my-products");
       const productList = Array.isArray(res.data) ? res.data : res.data?.value;
@@ -96,11 +114,22 @@ function VendorDashboard() {
       setProducts(Array.isArray(productList) ? productList : []);
     } catch (error) {
       console.log(error);
-      setProducts([]);
+      try {
+        const res = await API.get("/products");
+        const productList = Array.isArray(res.data) ? res.data : [];
+        setProducts(
+          productList.filter((product) => getProductVendorId(product) === currentUserId)
+        );
+      } catch (fallbackError) {
+        console.log(fallbackError);
+        setProductsError("Products could not be refreshed. Your existing list was kept.");
+      }
+    } finally {
+      setProductsLoading(false);
     }
-  };
+  }, [currentUserId]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const res = await API.get("/orders");
       setOrders(Array.isArray(res.data) ? res.data : []);
@@ -108,7 +137,7 @@ function VendorDashboard() {
       console.log(error);
       setOrders([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (actualRole !== "vendor") {
@@ -121,12 +150,13 @@ function VendorDashboard() {
     const handleNew = (order) => {
       setOrders((prev) => [order, ...prev.filter((item) => item._id !== order._id)]);
       if (showToast) showToast({ message: "New order received", type: "success" });
-      fetchOrders();
     };
 
     const handleUpdate = (order) => {
       if (showToast) showToast({ message: `Order ${order._id.slice(-6)} updated`, type: "info" });
-      fetchOrders();
+      setOrders((prev) =>
+        prev.map((item) => (item._id === order._id ? order : item))
+      );
     };
 
     onEvent("newOrder", handleNew);
@@ -136,7 +166,7 @@ function VendorDashboard() {
       offEvent("newOrder", handleNew);
       offEvent("orderUpdated", handleUpdate);
     };
-  }, [actualRole, showToast]);
+  }, [actualRole, fetchOrders, fetchProducts, showToast]);
 
   if (!vendorPages.includes(activePage)) {
     return <Navigate to="/vendor-dashboard" replace />;
@@ -160,7 +190,7 @@ function VendorDashboard() {
   const pendingOrders = orders.filter((order) => order.status === "pending").length;
   const activeOrderClass = orderClasses.find((item) => item.key === orderClass);
   const visibleOrders = orders.filter((order) => {
-    const vendorItems = getVendorItems(order, user?.id);
+    const vendorItems = getVendorItems(order, currentUserId);
     const matchesClass =
       !activeOrderClass?.statuses.length || activeOrderClass.statuses.includes(order.status);
 
@@ -256,19 +286,34 @@ function VendorDashboard() {
 
     try {
       if (editingProductId) {
-        await API.put(`/products/${editingProductId}`, formData);
+        const res = await API.put(`/products/${editingProductId}`, formData);
+        const updatedProduct = res.data;
+        if (updatedProduct?._id) {
+          setProducts((prev) =>
+            prev.map((product) =>
+              product._id === updatedProduct._id ? updatedProduct : product
+            )
+          );
+        }
         if (showToast) {
           showToast({ message: "Product updated successfully", type: "success" });
         }
       } else {
-        await API.post("/products", formData);
+        const res = await API.post("/products", formData);
+        const createdProduct = res.data;
+        if (createdProduct?._id) {
+          setProducts((prev) => [
+            createdProduct,
+            ...prev.filter((product) => product._id !== createdProduct._id),
+          ]);
+        }
         if (showToast) {
           showToast({ message: "Product added successfully", type: "success" });
         }
       }
 
       resetForm();
-      fetchProducts();
+      await fetchProducts();
       navigate("/vendor-dashboard/products");
     } catch (error) {
       console.log(error);
@@ -451,7 +496,7 @@ function VendorDashboard() {
             <EmptyPanel>No orders match your filter or search.</EmptyPanel>
           ) : (
             visibleOrders.map((order) => {
-              const vendorItems = getVendorItems(order, user?.id);
+              const vendorItems = getVendorItems(order, currentUserId);
               const sellerTotal = vendorItems.reduce(
                 (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
                 0
@@ -577,7 +622,14 @@ function VendorDashboard() {
       return (
         <section className="space-y-4">
           <PageTitle title="Products" subtitle="Review and update items shown to shoppers." />
-          {products.length === 0 ? (
+          {productsError && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+              {productsError}
+            </div>
+          )}
+          {productsLoading ? (
+            <EmptyPanel>Loading products...</EmptyPanel>
+          ) : products.length === 0 ? (
             <EmptyPanel>No products added yet.</EmptyPanel>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
