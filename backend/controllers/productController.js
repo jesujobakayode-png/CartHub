@@ -5,10 +5,10 @@ export const getVendorProducts =
 
     try {
 
-      const products =
-        await Product.find({
-          vendor: req.user.id,
-        });
+      const products = await Product.find({ vendor: req.user.id }).populate(
+        "vendor",
+        "name email"
+      );
 
       res.json(products);
 
@@ -23,7 +23,7 @@ export const getVendorProducts =
 // GET ALL PRODUCTS
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find().populate("vendor", "name email");
 
     res.status(200).json(products);
 
@@ -37,7 +37,10 @@ export const getProducts = async (req, res) => {
 // GET SINGLE PRODUCT
 export const getProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id).populate(
+      "vendor",
+      "name email"
+    );
 
     if (!product) {
       return res.status(404).json({

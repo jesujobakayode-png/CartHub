@@ -1,229 +1,339 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import API from "../services/api";
+import { onEvent, offEvent } from "../utils/socket";
+import { AuthContext } from "../context/AuthContext";
+import { ToastContext } from "../context/ToastContext";
+
+const statusStyles = {
+  pending: "bg-amber-100 text-amber-700 border-amber-200",
+  preparing: "bg-blue-100 text-blue-700 border-blue-200",
+  "out-for-delivery": "bg-violet-100 text-violet-700 border-violet-200",
+  delivered: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  cancelled: "bg-red-100 text-red-700 border-red-200",
+};
+
+const orderClasses = [
+  { key: "all", label: "All", statuses: [] },
+  { key: "pending", label: "Pending", statuses: ["pending"] },
+  { key: "in-progress", label: "In Progress", statuses: ["preparing", "out-for-delivery"] },
+  { key: "completed", label: "Completed", statuses: ["delivered"] },
+  { key: "cancelled", label: "Cancelled", statuses: ["cancelled"] },
+];
+
+function getVendorItems(order, userId) {
+  const items = Array.isArray(order.items) ? order.items : [];
+
+  if (!userId) {
+    return items;
+  }
+
+  const sellerItems = items.filter((item) => {
+    const vendorId = typeof item.vendor === "string" ? item.vendor : item.vendor?._id;
+    return vendorId === userId;
+  });
+
+  return sellerItems.length > 0 ? sellerItems : items;
+}
+
+function orderMatchesSearch(order, vendorItems, searchTerm) {
+  const needle = searchTerm.trim().toLowerCase();
+
+  if (!needle) {
+    return true;
+  }
+
+  const searchable = [
+    order._id,
+    order.status,
+    order.user?.name,
+    order.user?.email,
+    ...vendorItems.map((item) => item.name),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return searchable.includes(needle);
+}
 
 function VendorOrders() {
-
+  const { user } = useContext(AuthContext);
+  const { showToast } = useContext(ToastContext);
   const [orders, setOrders] = useState([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
+  const [loading, setLoading] = useState(true);
+  const [orderClass, setOrderClass] = useState("all");
+  const [orderSearch, setOrderSearch] = useState("");
+  const [submittedOrderSearch, setSubmittedOrderSearch] = useState("");
 
   const fetchOrders = async () => {
-
     try {
-
-      const res =
-        await API.get("/orders");
-
-      setOrders(res.data);
-
+      const res = await API.get("/orders");
+      setOrders(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
-
       console.log(error);
-
+      setOrders([]);
     } finally {
-
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
+  useEffect(() => {
+    const handleNew = (order) => {
+      setOrders((prev) => [order, ...prev.filter((item) => item._id !== order._id)]);
+      if (showToast) showToast({ message: "New order received", type: "success" });
+    };
 
-  const updateStatus = async (
-    id,
-    status
-  ) => {
-
-    try {
-
-      await API.put(
-        `/orders/${id}`,
-        { status }
+    const handleUpdate = (updatedOrder) => {
+      setOrders((prev) =>
+        prev.map((order) => (order._id === updatedOrder._id ? updatedOrder : order))
       );
+      if (showToast) {
+        showToast({ message: `Order ${updatedOrder._id.slice(-6)} updated`, type: "info" });
+      }
+    };
 
+    onEvent("newOrder", handleNew);
+    onEvent("orderUpdated", handleUpdate);
+
+    return () => {
+      offEvent("newOrder", handleNew);
+      offEvent("orderUpdated", handleUpdate);
+    };
+  }, [showToast]);
+
+  const updateStatus = async (id, status) => {
+    try {
+      await API.put(`/orders/${id}`, { status });
       fetchOrders();
-
     } catch (error) {
-
       console.log(error);
     }
   };
 
+  const activeOrderClass = orderClasses.find((item) => item.key === orderClass);
+  const visibleOrders = orders.filter((order) => {
+    const vendorItems = getVendorItems(order, user?.id);
+    const matchesClass =
+      !activeOrderClass?.statuses.length || activeOrderClass.statuses.includes(order.status);
+
+    return matchesClass && orderMatchesSearch(order, vendorItems, submittedOrderSearch);
+  });
 
   if (loading) {
-
     return (
-      <div className="text-white text-2xl">
+      <div className="rounded-3xl border border-stone-200 bg-white/80 p-8 text-center text-stone-700 shadow-sm">
         Loading orders...
       </div>
     );
   }
 
-
   return (
-    <div className="min-h-screen bg-[#120b08] text-white p-6">
+    <div className="space-y-6">
+      <section className="rounded-3xl border border-stone-300 bg-slate-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-stone-950 sm:text-4xl">Vendor Orders</h1>
+            <p className="mt-2 max-w-2xl text-sm text-stone-600">
+              Manage incoming shopper orders with full item details and real-time status updates.
+            </p>
+          </div>
+          <div className="rounded-3xl bg-white px-4 py-3 text-sm font-semibold text-stone-700 shadow-sm">
+            {orders.length} orders
+          </div>
+        </div>
+      </section>
 
-      <h1 className="text-4xl font-bold text-yellow-500 mb-8">
+      <section className="rounded-3xl border border-stone-300 bg-white/95 p-4 shadow-sm sm:p-5">
+        <div className="flex flex-wrap gap-2">
+          {orderClasses.map((item) => {
+            const count = item.statuses.length
+              ? orders.filter((order) => item.statuses.includes(order.status)).length
+              : orders.length;
 
-        Vendor Orders
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setOrderClass(item.key)}
+                className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                  orderClass === item.key
+                    ? "border-amber-500 bg-amber-500 text-black"
+                    : "border-stone-300 bg-white text-stone-700 hover:border-amber-300 hover:bg-amber-50"
+                }`}
+              >
+                {item.label} ({count})
+              </button>
+            );
+          })}
+        </div>
 
-      </h1>
-
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setSubmittedOrderSearch(orderSearch);
+          }}
+          className="mt-4 flex flex-col gap-3 sm:flex-row"
+        >
+          <input
+            type="search"
+            value={orderSearch}
+            onChange={(e) => setOrderSearch(e.target.value)}
+            placeholder="Search order ID, shopper, email, item, or status"
+            className="min-h-11 flex-1 rounded-lg border border-stone-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-100"
+          />
+          <button
+            type="submit"
+            className="min-h-11 rounded-lg border border-amber-500 bg-amber-500 px-5 py-2 text-sm font-bold text-black transition hover:bg-amber-400"
+          >
+            Search
+          </button>
+        </form>
+      </section>
 
       {orders.length === 0 ? (
-
-        <div className="bg-[#2c1b12] p-6 rounded-2xl border border-yellow-700">
-
-          No orders yet.
-
+        <div className="rounded-3xl border border-stone-300 bg-slate-50 p-8 text-center text-stone-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <p className="text-xl font-semibold text-stone-950">No orders yet</p>
+          <p className="mt-2 text-sm text-stone-600">Incoming shopper orders will appear here.</p>
         </div>
-
+      ) : visibleOrders.length === 0 ? (
+        <div className="rounded-3xl border border-stone-300 bg-slate-50 p-8 text-center text-stone-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <p className="text-xl font-semibold text-stone-950">No matching orders</p>
+          <p className="mt-2 text-sm text-stone-600">Try another class or search term.</p>
+        </div>
       ) : (
-
         <div className="space-y-6">
+          {visibleOrders.map((order) => {
+            const vendorItems = getVendorItems(order, user?.id);
+            const sellerTotal = vendorItems.reduce(
+              (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+              0
+            );
+            const sellerQuantity = vendorItems.reduce(
+              (sum, item) => sum + Number(item.quantity || 0),
+              0
+            );
 
-          {orders.map((order) => (
-
-            <div
-              key={order._id}
-              className="bg-[#2c1b12] border border-yellow-700 rounded-2xl p-6 shadow-lg"
-            >
-
-              {/* TOP */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
-
-                <div>
-
-                  <h2 className="text-2xl font-bold text-yellow-500">
-
-                    Order #{order._id.slice(-6)}
-
-                  </h2>
-
-                  <p className="text-gray-300">
-
-                    Customer:
-                    {" "}
-                    {order.user?.name}
-
-                  </p>
-
-                  <p className="text-gray-400 text-sm">
-
-                    {order.user?.email}
-
-                  </p>
-
-                </div>
-
-
-                <div className="flex flex-col gap-3">
-
-                  <span className="bg-yellow-500 text-black px-4 py-2 rounded-lg font-bold text-center">
-
-                    NGN {order.totalPrice}
-
-                  </span>
-
-
-                  <select
-                    value={order.status}
-                    onChange={(e) =>
-                      updateStatus(
-                        order._id,
-                        e.target.value
-                      )
-                    }
-                    className="bg-[#120b08] border border-yellow-700 rounded-lg px-4 py-2 outline-none"
-                  >
-
-                    <option value="pending">
-                      Pending
-                    </option>
-
-                    <option value="preparing">
-                      Preparing
-                    </option>
-
-                    <option value="out-for-delivery">
-                      Out For Delivery
-                    </option>
-
-                    <option value="delivered">
-                      Delivered
-                    </option>
-
-                    <option value="cancelled">
-                      Cancelled
-                    </option>
-
-                  </select>
-
-                </div>
-
-              </div>
-
-
-              {/* ITEMS */}
-              <div className="space-y-4">
-
-                {order.items.map(
-                  (item, index) => (
-
-                    <div
-                      key={index}
-                      className="flex items-center gap-4 bg-[#1c120d] p-4 rounded-xl"
-                    >
-
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-20 h-20 object-cover rounded-lg"
-                      />
-
-                      <div className="flex-1">
-
-                        <h3 className="font-bold text-lg">
-
-                          {item.name}
-
-                        </h3>
-
-                        <p className="text-gray-400">
-
-                          Quantity:
-                          {" "}
-                          {item.quantity}
-
+            return (
+              <div
+                key={order._id}
+                className="rounded-4xl border border-stone-200 bg-white/95 p-6 shadow-sm ring-1 ring-stone-100 sm:p-8 transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="mb-6 border-b border-stone-200 pb-6">
+                  <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600">
+                          Order #{order._id.slice(-6)}
                         </p>
-
+                        <span className="text-sm text-stone-500">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
-
-                      <p className="text-yellow-400 font-bold">
-
-                        NGN{" "}
-                        {item.price * item.quantity}
-
-                      </p>
-
+                      <select
+                        value={order.status}
+                        onChange={(e) => updateStatus(order._id, e.target.value)}
+                        className={`rounded-full border-2 px-4 py-2 text-sm font-semibold capitalize transition ${
+                          statusStyles[order.status] || "border-stone-200 bg-stone-50"
+                        }`}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="preparing">Preparing</option>
+                        <option value="out-for-delivery">Out For Delivery</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
                     </div>
-                  )
-                )}
+                    <div className="rounded-3xl bg-slate-50 px-4 py-3 text-lg font-bold text-stone-950 shadow-inner shadow-stone-100">
+                      NGN {sellerTotal}
+                    </div>
+                  </div>
+                </div>
 
+                <div className="mb-6 rounded-3xl border border-stone-200 bg-slate-50 p-4">
+                  <p className="mb-2 text-sm font-semibold text-stone-700">SHOPPER</p>
+                  <p className="text-base font-semibold text-stone-950">
+                    {order.user?.name || "Shopper"}
+                  </p>
+                  <p className="text-sm text-stone-600">{order.user?.email || "No email"}</p>
+                </div>
+
+                <div className="mb-6">
+                  <p className="mb-4 text-sm font-semibold uppercase text-stone-700">
+                    Seller Items ({vendorItems.length})
+                  </p>
+                  <div className="space-y-4">
+                    {vendorItems.map((item, index) => (
+                      <div
+                        key={`${item.productId || item.name}-${index}`}
+                        className="rounded-3xl border-2 border-stone-200 bg-slate-50 p-4 transition hover:border-amber-300 hover:shadow-sm"
+                      >
+                        <div className="sm:flex sm:items-center sm:justify-between sm:gap-4">
+                          <div className="flex min-w-0 flex-1 items-center gap-3">
+                            {item.image && (
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="h-16 w-16 rounded-xl border border-stone-200 object-cover"
+                              />
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-base font-semibold text-stone-950">{item.name}</p>
+                              <p className="text-sm text-stone-600">
+                                Qty {item.quantity} x NGN {item.price} each
+                              </p>
+                            </div>
+                          </div>
+                          <p className="mt-3 text-sm font-semibold text-stone-950 sm:mt-0">
+                            NGN {Number(item.price || 0) * Number(item.quantity || 0)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-stone-200 bg-slate-50 p-4">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-stone-700">Total Items</p>
+                      <p className="mt-1 text-lg font-bold text-stone-950">{sellerQuantity}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-stone-700">Seller Total</p>
+                      <p className="mt-1 text-lg font-bold text-amber-700">NGN {sellerTotal}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-stone-700">Status</p>
+                      <p className="mt-1 text-sm font-semibold capitalize text-stone-950">
+                        {order.status?.replaceAll("-", " ")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-stone-700">Placed</p>
+                      <p className="mt-1 text-xs text-stone-600">
+                        {new Date(order.createdAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 border-t border-stone-200 pt-4">
+                    <p className="text-xs font-semibold uppercase text-stone-700">
+                      Full Order Total
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-stone-950">
+                      NGN {order.totalPrice}
+                    </p>
+                  </div>
+                </div>
               </div>
-
-            </div>
-          ))}
-
+            );
+          })}
         </div>
       )}
-
     </div>
   );
 }

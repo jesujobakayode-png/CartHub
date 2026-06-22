@@ -68,9 +68,9 @@ function EditProduct() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto bg-[#2c1b12] p-8 rounded-2xl shadow-lg border border-yellow-700">
+    <div className="max-w-2xl mx-auto bg-[#fbfaf7] p-6 rounded-2xl shadow-sm border border-stone-300 sm:p-8">
 
-      <h1 className="text-3xl font-bold text-yellow-500 mb-6">
+      <h1 className="text-3xl font-bold text-stone-950 mb-6">
         Edit Product
       </h1>
 
@@ -81,7 +81,7 @@ function EditProduct() {
           name="name"
           value={formData.name}
           onChange={handleChange}
-          className="w-full p-3 rounded-lg bg-[#1c120d] border border-yellow-700 outline-none"
+          className="w-full p-3 rounded-lg bg-stone-50 border border-stone-200 outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-100"
           required
         />
 
@@ -90,7 +90,7 @@ function EditProduct() {
           name="price"
           value={formData.price}
           onChange={handleChange}
-          className="w-full p-3 rounded-lg bg-[#1c120d] border border-yellow-700 outline-none"
+          className="w-full p-3 rounded-lg bg-stone-50 border border-stone-200 outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-100"
           required
         />
 
@@ -99,7 +99,7 @@ function EditProduct() {
           name="category"
           value={formData.category}
           onChange={handleChange}
-          className="w-full p-3 rounded-lg bg-[#1c120d] border border-yellow-700 outline-none"
+          className="w-full p-3 rounded-lg bg-stone-50 border border-stone-200 outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-100"
         />
 
         <input
@@ -107,7 +107,7 @@ function EditProduct() {
           name="image"
           value={formData.image}
           onChange={handleChange}
-          className="w-full p-3 rounded-lg bg-[#1c120d] border border-yellow-700 outline-none"
+          className="w-full p-3 rounded-lg bg-stone-50 border border-stone-200 outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-100"
         />
 
         <textarea
@@ -115,11 +115,11 @@ function EditProduct() {
           rows="4"
           value={formData.description}
           onChange={handleChange}
-          className="w-full p-3 rounded-lg bg-[#1c120d] border border-yellow-700 outline-none"
+          className="w-full p-3 rounded-lg bg-stone-50 border border-stone-200 outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-100"
         />
 
         <button
-          className="w-full bg-yellow-600 hover:bg-yellow-500 transition py-3 rounded-lg font-bold text-black"
+          className="w-full border border-amber-500 bg-amber-500 hover:bg-amber-400 transition py-3 rounded-lg font-bold text-black"
         >
           Update Product
         </button>

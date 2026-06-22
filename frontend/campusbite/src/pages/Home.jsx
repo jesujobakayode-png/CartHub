@@ -48,21 +48,21 @@ function Home() {
 
   return (
     <div>
-      <div className="mb-8 sm:mb-10">
-        <h1 className="mb-3 text-3xl font-bold text-yellow-500 sm:text-4xl">
-          Campus Vendor Menu
+      <div className="mb-6 rounded-2xl border border-stone-300 bg-[#fbfaf7] p-5 shadow-sm sm:mb-8 sm:p-6">
+        <h1 className="mb-3 text-3xl font-bold text-stone-950 sm:text-4xl">
+          Campus Marketplace
         </h1>
 
-        <p className="text-gray-300">Discover delicious meals around campus</p>
+        <p className="text-gray-700">Discover useful products and services around campus</p>
       </div>
 
-      <div className="mb-5 sm:mb-6">
+      <div className="mb-5 rounded-2xl border border-stone-300 bg-[#fbfaf7] p-3 shadow-sm sm:mb-6 sm:p-4">
         <input
           type="text"
-          placeholder="Search meals..."
+          placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="min-h-12 w-full rounded-xl border border-yellow-700 bg-[#2c1b12] px-4 py-3 outline-none transition focus:border-yellow-500 sm:px-5 sm:py-4"
+          className="min-h-12 w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 outline-none transition focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-100 sm:px-5 sm:py-4"
         />
       </div>
 
@@ -74,8 +74,8 @@ function Home() {
             onClick={() => setSelectedCategory(category)}
             className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition sm:px-5 ${
               selectedCategory === category
-                ? "bg-yellow-500 text-black border-yellow-500"
-                : "bg-[#2c1b12] text-yellow-500 border-yellow-700 hover:bg-yellow-500 hover:text-black"
+                ? "bg-amber-500 text-black border-amber-500"
+                : "bg-[#fbfaf7] text-amber-700 border-stone-300 hover:bg-amber-500 hover:text-black"
             }`}
           >
             {category}
@@ -84,17 +84,17 @@ function Home() {
       </div>
 
       {filteredProducts.length === 0 ? (
-        <div className="rounded-2xl border border-yellow-700 bg-[#2c1b12] p-8 text-center shadow-2xl sm:p-12">
-          <div className="mb-5 text-4xl font-bold text-yellow-500 sm:text-5xl">
-            Meals
+        <div className="rounded-2xl border border-stone-300 bg-[#fbfaf7] p-8 text-center shadow-sm sm:p-12">
+          <div className="mb-5 text-4xl font-bold text-amber-700 sm:text-5xl">
+            Products
           </div>
 
-          <h2 className="mb-3 text-2xl font-bold text-yellow-500 sm:text-3xl">
-            No Meals Found
+          <h2 className="mb-3 text-2xl font-bold text-stone-950 sm:text-3xl">
+            No Products Found
           </h2>
 
-          <p className="text-gray-400 max-w-md mx-auto leading-relaxed">
-            We could not find any meals matching your search. Try another
+          <p className="text-gray-600 max-w-md mx-auto leading-relaxed">
+            We could not find any products matching your search. Try another
             keyword or category.
           </p>
         </div>

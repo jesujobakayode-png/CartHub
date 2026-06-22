@@ -70,23 +70,23 @@ function Cart() {
 
   return (
     <div>
-      <h1 className="mb-8 text-3xl font-bold text-yellow-500 sm:text-4xl">
+      <h1 className="mb-8 text-3xl font-bold text-stone-950 sm:text-4xl">
         Your Cart
       </h1>
 
       {cart.length === 0 ? (
-        <div className="rounded-2xl border border-yellow-700 bg-[#2c1b12] p-8 text-center shadow-2xl sm:p-12">
-          <div className="mb-5 text-4xl font-bold text-yellow-500 sm:text-5xl">
+        <div className="rounded-2xl border border-stone-300 bg-[#fbfaf7] p-8 text-center shadow-sm sm:p-12">
+          <div className="mb-5 text-4xl font-bold text-amber-700 sm:text-5xl">
             Cart
           </div>
 
-          <h2 className="mb-3 text-2xl font-bold text-yellow-500 sm:text-3xl">
+          <h2 className="mb-3 text-2xl font-bold text-stone-950 sm:text-3xl">
             Your Cart is Empty
           </h2>
 
-          <p className="text-gray-400 max-w-md mx-auto leading-relaxed">
-            Looks like you have not added any delicious meals yet. Browse campus
-            vendors and discover amazing food.
+            <p className="text-gray-600 max-w-md mx-auto leading-relaxed">
+            Looks like you have not added any products yet. Browse campus
+            vendors and discover something useful.
           </p>
         </div>
       ) : (
