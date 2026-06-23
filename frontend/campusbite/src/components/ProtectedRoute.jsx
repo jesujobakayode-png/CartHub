@@ -16,7 +16,7 @@ function ProtectedRoute({
 
   const actualRole = user?.user?.role || user?.role;
 
-  if (role && actualRole !== role) {
+  if (role && actualRole?.toLowerCase() !== role.toLowerCase()) {
     return <Navigate to="/" />;
   }
 

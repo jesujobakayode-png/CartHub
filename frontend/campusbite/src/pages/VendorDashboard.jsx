@@ -37,14 +37,19 @@ const statusStyles = {
 
 function getVendorItems(order, userId) {
   const items = Array.isArray(order.items) ? order.items : [];
+  const userKey = userId?.toString();
 
-  if (!userId) {
+  if (!userKey) {
     return [];
   }
 
   return items.filter((item) => {
-    const vendorId = typeof item.vendor === "string" ? item.vendor : item.vendor?._id;
-    return vendorId === userId;
+    const vendorId =
+      item.vendorId ||
+      (typeof item.vendor === "string"
+        ? item.vendor
+        : item.vendor?._id || item.productId?.vendor?._id || item.productId?.vendor);
+    return vendorId?.toString() === userKey;
   });
 }
 
@@ -77,14 +82,28 @@ function getCurrentUserId(user) {
   return user?.id || user?._id || user?.user?.id || user?.user?._id;
 }
 
+function getCurrentUserEmail(user) {
+  return user?.email || user?.user?.email;
+}
+
 function getCurrentUserRole(user) {
   return user?.role || user?.user?.role;
 }
 
 function getProductVendorId(product) {
-  const vendorId = typeof product.vendor === "string" ? product.vendor : product.vendor?._id;
+  const vendorId = product.vendorId || (typeof product.vendor === "string" ? product.vendor : product.vendor?._id || product.vendor?.id);
 
   return vendorId?.toString();
+}
+
+function productBelongsToUser(product, userId, userEmail) {
+  const vendorId = getProductVendorId(product);
+  const vendorEmail = product.vendor?.email?.toLowerCase();
+
+  return (
+    (vendorId && vendorId === userId?.toString()) ||
+    (vendorEmail && vendorEmail === userEmail?.toLowerCase())
+  );
 }
 
 function VendorDashboard() {
@@ -94,6 +113,7 @@ function VendorDashboard() {
   const { showToast } = useContext(ToastContext);
   const actualRole = getCurrentUserRole(user);
   const currentUserId = getCurrentUserId(user);
+  const currentUserEmail = getCurrentUserEmail(user);
 
   const activePage = section || "dashboard";
   const [products, setProducts] = useState([]);
@@ -114,15 +134,29 @@ function VendorDashboard() {
     try {
       const res = await API.get("/products/vendor/my-products");
       const productList = Array.isArray(res.data) ? res.data : res.data?.value;
+      const normalizedProducts = Array.isArray(productList) ? productList : [];
 
-      setProducts(Array.isArray(productList) ? productList : []);
+      if (normalizedProducts.length > 0) {
+        setProducts(normalizedProducts);
+        return;
+      }
+
+      const allProducts = await API.get("/products");
+      const allProductList = Array.isArray(allProducts.data) ? allProducts.data : [];
+      setProducts(
+        allProductList.filter((product) =>
+          productBelongsToUser(product, currentUserId, currentUserEmail)
+        )
+      );
     } catch (error) {
       console.log(error);
       try {
         const res = await API.get("/products");
         const productList = Array.isArray(res.data) ? res.data : [];
         setProducts(
-          productList.filter((product) => getProductVendorId(product) === currentUserId?.toString())
+          productList.filter((product) =>
+            productBelongsToUser(product, currentUserId, currentUserEmail)
+          )
         );
       } catch (fallbackError) {
         console.log(fallbackError);
@@ -131,7 +165,7 @@ function VendorDashboard() {
     } finally {
       setProductsLoading(false);
     }
-  }, [currentUserId]);
+  }, [currentUserEmail, currentUserId]);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -144,7 +178,7 @@ function VendorDashboard() {
   }, []);
 
   useEffect(() => {
-    if (actualRole !== "vendor") {
+    if (actualRole?.toLowerCase() !== "vendor") {
       return;
     }
 
@@ -176,7 +210,7 @@ function VendorDashboard() {
     return <Navigate to="/vendor-dashboard" replace />;
   }
 
-  if (actualRole !== "vendor") {
+  if (actualRole?.toLowerCase() !== "vendor") {
     return (
       <div className="flex min-h-[70vh] items-center justify-center text-stone-950">
         <div className="w-full max-w-md rounded-xl border border-stone-300 bg-[#fbfaf7] p-8 text-center shadow-sm">
@@ -198,7 +232,7 @@ function VendorDashboard() {
     const matchesClass =
       !activeOrderClass?.statuses.length || activeOrderClass.statuses.includes(getOrderStatus(order));
 
-    return matchesClass && orderMatchesSearch(order, vendorItems, submittedOrderSearch);
+    return vendorItems.length > 0 && matchesClass && orderMatchesSearch(order, vendorItems, submittedOrderSearch);
   });
 
   const updateStatus = async (id, status) => {
@@ -451,8 +485,11 @@ function VendorDashboard() {
             <div className="flex flex-wrap gap-2">
               {orderClasses.map((item) => {
                 const count = item.statuses.length
-                  ? orders.filter((order) => item.statuses.includes(getOrderStatus(order))).length
-                  : orders.length;
+                  ? orders.filter((order) => {
+                      const vendorItems = getVendorItems(order, currentUserId);
+                      return vendorItems.length > 0 && item.statuses.includes(getOrderStatus(order));
+                    }).length
+                  : orders.filter((order) => getVendorItems(order, currentUserId).length > 0).length;
 
                 return (
                   <button

@@ -21,6 +21,7 @@ function Navbar() {
   const { unreadCount } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
+  const isVendor = user?.role?.toLowerCase() === "vendor";
 
   const { cart, clearCart } = useContext(CartContext);
 
@@ -31,7 +32,7 @@ function Navbar() {
   };
 
   useEffect(() => {
-    if (user?.role !== "vendor") {
+    if (!isVendor) {
       return;
     }
 
@@ -44,7 +45,7 @@ function Navbar() {
     return () => {
       offEvent("newOrder", handleNewOrder);
     };
-  }, [user]);
+  }, [isVendor]);
 
   useEffect(() => {
     if (location.pathname.startsWith("/vendor-dashboard")) {
@@ -107,7 +108,7 @@ function Navbar() {
               </span>
             </Link>
 
-            {user?.role === "vendor" && (
+            {isVendor && (
               <NavLink
                 to="/vendor-dashboard"
                 className={({ isActive }) =>
@@ -123,7 +124,7 @@ function Navbar() {
               </NavLink>
             )}
 
-            {user?.role === "vendor" && (
+            {isVendor && (
               <NavLink
                 to="/vendor-profile"
                 className={({ isActive }) =>
@@ -134,7 +135,7 @@ function Navbar() {
               </NavLink>
             )}
 
-            {user && user?.role !== "vendor" && (
+            {user && !isVendor && (
               <NavLink
                 to="/dashboard"
                 className={({ isActive }) =>
@@ -145,7 +146,7 @@ function Navbar() {
               </NavLink>
             )}
 
-            {user && user?.role !== "vendor" && (
+            {user && !isVendor && (
               <NavLink
                 to="/my-orders"
                 className={({ isActive }) =>

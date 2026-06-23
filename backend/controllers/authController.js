@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import Product from "../models/Product.js";
 import User from "../models/User.js";
 
 const profileFields = [
@@ -20,6 +21,7 @@ const profileFields = [
 
 function formatUser(user) {
   return {
+    _id: user._id,
     id: user._id,
     name: user.name,
     email: user.email,
@@ -201,7 +203,15 @@ export const updateProfile = async (req, res) => {
 // Public: list vendors
 export const listVendors = async (req, res) => {
   try {
-    const vendors = await User.find({ role: /^vendor$/i })
+    const productVendorIds = await Product.find({ vendor: { $exists: true, $ne: null } })
+      .distinct("vendor");
+
+    const vendors = await User.find({
+      $or: [
+        { role: /^vendor$/i },
+        { _id: { $in: productVendorIds } },
+      ],
+    })
       .sort({ brandName: 1, name: 1 })
       .limit(200);
 
@@ -216,8 +226,9 @@ export const getVendorById = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id);
+    const hasProducts = user ? await Product.exists({ vendor: user._id }) : false;
 
-    if (!user || user.role?.toLowerCase() !== "vendor") {
+    if (!user || (user.role?.toLowerCase() !== "vendor" && !hasProducts)) {
       return res.status(404).json({ message: "Vendor not found" });
     }
 

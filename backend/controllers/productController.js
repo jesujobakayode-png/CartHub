@@ -16,6 +16,17 @@ function sanitizeProductInput(body) {
   }, {});
 }
 
+function serializeProduct(product) {
+  const data = typeof product.toObject === "function" ? product.toObject() : product;
+  const vendor = data.vendor;
+  const vendorId = typeof vendor === "string" ? vendor : vendor?._id?.toString() || vendor?.toString();
+
+  return {
+    ...data,
+    vendorId,
+  };
+}
+
 export const getVendorProducts =
   async (req, res) => {
 
@@ -25,7 +36,7 @@ export const getVendorProducts =
         .populate("vendor", "name email")
         .sort({ createdAt: -1 });
 
-      res.json(products);
+      res.json(products.map(serializeProduct));
 
     } catch (error) {
 
@@ -40,7 +51,7 @@ export const getProducts = async (req, res) => {
   try {
     const products = await Product.find().populate("vendor", "name email");
 
-    res.status(200).json(products);
+    res.status(200).json(products.map(serializeProduct));
 
   } catch (error) {
     res.status(500).json({
@@ -63,7 +74,7 @@ export const getProduct = async (req, res) => {
       });
     }
 
-    res.status(200).json(product);
+    res.status(200).json(serializeProduct(product));
 
   } catch (error) {
     res.status(500).json({
@@ -88,7 +99,7 @@ export const createProduct = async (req, res) => {
       "name email"
     );
 
-    res.status(201).json(populatedProduct);
+    res.status(201).json(serializeProduct(populatedProduct));
 
   } catch (error) {
     res.status(500).json({
@@ -136,7 +147,7 @@ export const updateProduct =
           { new: true }
         ).populate("vendor", "name email");
 
-      res.json(updatedProduct);
+      res.json(serializeProduct(updatedProduct));
 
     } catch (error) {
 

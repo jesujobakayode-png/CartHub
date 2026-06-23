@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { FaBell, FaCheckCircle, FaInbox } from "react-icons/fa";
 
+import BackButton from "../components/BackButton";
 import { useNotification } from "../context/NotificationContext";
 
 function Notifications() {
@@ -22,6 +23,9 @@ function Notifications() {
       <div className="rounded-2xl border border-stone-300 bg-[#fbfaf7] p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
+            <div className="mb-4">
+              <BackButton />
+            </div>
             <div className="flex items-center gap-3 text-2xl font-bold text-stone-950">
               <FaBell className="text-amber-600" />
               Notifications

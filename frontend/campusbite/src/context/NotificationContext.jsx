@@ -112,7 +112,13 @@ function NotificationProvider({ children }) {
   }, []);
 
   const markAllAsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
+    setNotifications((prev) => {
+      if (!prev.some((item) => !item.read)) {
+        return prev;
+      }
+
+      return prev.map((item) => ({ ...item, read: true }));
+    });
   }, []);
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 
+import BackButton from "../components/BackButton";
 import API from "../services/api";
 import { onEvent, offEvent } from "../utils/socket";
 import { AuthContext } from "../context/AuthContext";
@@ -23,14 +24,19 @@ const orderClasses = [
 
 function getVendorItems(order, userId) {
   const items = Array.isArray(order.items) ? order.items : [];
+  const userKey = userId?.toString();
 
-  if (!userId) {
+  if (!userKey) {
     return [];
   }
 
   return items.filter((item) => {
-    const vendorId = typeof item.vendor === "string" ? item.vendor : item.vendor?._id;
-    return vendorId === userId;
+    const vendorId =
+      item.vendorId ||
+      (typeof item.vendor === "string"
+        ? item.vendor
+        : item.vendor?._id || item.productId?.vendor?._id || item.productId?.vendor);
+    return vendorId?.toString() === userKey;
   });
 }
 
@@ -128,7 +134,7 @@ function VendorOrders() {
     const matchesClass =
       !activeOrderClass?.statuses.length || activeOrderClass.statuses.includes(getOrderStatus(order));
 
-    return matchesClass && orderMatchesSearch(order, vendorItems, submittedOrderSearch);
+    return vendorItems.length > 0 && matchesClass && orderMatchesSearch(order, vendorItems, submittedOrderSearch);
   });
 
   if (loading) {
@@ -144,6 +150,9 @@ function VendorOrders() {
       <section className="rounded-3xl border border-stone-300 bg-slate-50 p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
+            <div className="mb-4">
+              <BackButton fallback="/vendor-dashboard" />
+            </div>
             <h1 className="text-3xl font-bold text-stone-950 sm:text-4xl">Vendor Orders</h1>
             <p className="mt-2 max-w-2xl text-sm text-stone-600">
               Manage incoming shopper orders with full item details and real-time status updates.
@@ -159,8 +168,11 @@ function VendorOrders() {
         <div className="flex flex-wrap gap-2">
           {orderClasses.map((item) => {
             const count = item.statuses.length
-              ? orders.filter((order) => item.statuses.includes(getOrderStatus(order))).length
-              : orders.length;
+              ? orders.filter((order) => {
+                  const vendorItems = getVendorItems(order, currentUserId);
+                  return vendorItems.length > 0 && item.statuses.includes(getOrderStatus(order));
+                }).length
+              : orders.filter((order) => getVendorItems(order, currentUserId).length > 0).length;
 
             return (
               <button

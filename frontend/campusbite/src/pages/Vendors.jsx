@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FaStore } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
+import BackButton from "../components/BackButton";
 import API from "../services/api";
 
 function getVendorList(data) {
@@ -25,7 +26,40 @@ function getVendorList(data) {
 }
 
 function getVendorId(vendor) {
-  return vendor?.id || vendor?._id;
+  return vendor?.id || vendor?._id || vendor?.vendorId;
+}
+
+function vendorFromProduct(product) {
+  if (!product?.vendor) {
+    return null;
+  }
+
+  if (typeof product.vendor === "string") {
+    return {
+      id: product.vendorId || product.vendor,
+      name: "Vendor",
+    };
+  }
+
+  return {
+    ...product.vendor,
+    id: product.vendorId || product.vendor.id || product.vendor._id,
+  };
+}
+
+function uniqueVendors(vendors) {
+  const seen = new Set();
+
+  return vendors.filter((vendor) => {
+    const id = getVendorId(vendor)?.toString();
+
+    if (!id || seen.has(id)) {
+      return false;
+    }
+
+    seen.add(id);
+    return true;
+  });
 }
 
 function Vendors() {
@@ -38,11 +72,29 @@ function Vendors() {
 
     try {
       const res = await API.get("/auth/vendors");
-      setVendors(getVendorList(res.data).filter(getVendorId));
+      const vendorList = uniqueVendors(getVendorList(res.data));
+
+      if (vendorList.length > 0) {
+        setVendors(vendorList);
+        return;
+      }
+
+      const productRes = await API.get("/products");
+      const products = Array.isArray(productRes.data) ? productRes.data : [];
+      setVendors(uniqueVendors(products.map(vendorFromProduct).filter(Boolean)));
     } catch (error) {
       console.log(error);
-      setError(error.response?.data?.message || "Vendors could not be loaded.");
-      setVendors([]);
+      try {
+        const productRes = await API.get("/products");
+        const products = Array.isArray(productRes.data) ? productRes.data : [];
+        const vendorsFromProducts = uniqueVendors(products.map(vendorFromProduct).filter(Boolean));
+        setVendors(vendorsFromProducts);
+        setError(vendorsFromProducts.length ? "" : "Vendors could not be loaded.");
+      } catch (fallbackError) {
+        console.log(fallbackError);
+        setError(error.response?.data?.message || "Vendors could not be loaded.");
+        setVendors([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -55,7 +107,10 @@ function Vendors() {
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-stone-300 bg-[#fbfaf7] p-6 shadow-sm">
-        <h1 className="text-3xl font-bold text-stone-950">Vendors</h1>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-3xl font-bold text-stone-950">Vendors</h1>
+          <BackButton />
+        </div>
         <p className="mt-1 text-sm text-stone-600">
           Browse local sellers and view their public storefronts.
         </p>

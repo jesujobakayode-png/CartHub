@@ -1,5 +1,5 @@
 export const vendorOnly = (req, res, next) => {
-  if (req.user.role !== "vendor") {
+  if (req.user.role?.toLowerCase() !== "vendor") {
     return res.status(403).json({ message: "Access denied" });
   }
 

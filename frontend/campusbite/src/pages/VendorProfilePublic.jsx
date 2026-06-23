@@ -9,6 +9,7 @@ import {
   FaStore,
 } from "react-icons/fa";
 import { useParams } from "react-router-dom";
+import BackButton from "../components/BackButton";
 import API from "../services/api";
 import { ToastContext } from "../context/ToastContext";
 
@@ -87,6 +88,9 @@ function VendorProfilePublic() {
       <section className="overflow-hidden rounded-3xl border border-stone-300 bg-[#fbfaf7] shadow-sm">
         <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1.15fr_0.85fr] lg:p-8">
           <div className="min-w-0">
+            <div className="mb-4">
+              <BackButton fallback="/vendors" />
+            </div>
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-3xl text-amber-700 shadow-sm">
               {profile.logo ? (
                 <img

@@ -14,16 +14,41 @@ function getVendorId(value) {
   return typeof value === "string" ? value : value?._id?.toString() || value?.toString();
 }
 
+function getItemVendorId(item) {
+  return getVendorId(item.vendor) || getVendorId(item.productId?.vendor);
+}
+
+function getItemVendor(item) {
+  return item.vendor || item.productId?.vendor;
+}
+
+function getItemValue(item, field) {
+  return item[field] ?? item.productId?.[field];
+}
+
 function serializeOrder(order) {
   return typeof order.toObject === "function" ? order.toObject() : order;
+}
+
+function getProductId(value) {
+  return typeof value === "string" ? value : value?._id?.toString() || value?.toString();
 }
 
 function shapeOrderForVendor(order, vendorId) {
   const shapedOrder = serializeOrder(order);
   const vendorKey = vendorId?.toString();
-  const vendorItems = (shapedOrder.items || []).filter(
-    (item) => getVendorId(item.vendor) === vendorKey
-  );
+  const vendorItems = (shapedOrder.items || [])
+    .filter((item) => getItemVendorId(item) === vendorKey)
+    .map((item) => ({
+      ...item,
+      vendor: getItemVendor(item),
+      vendorId: getItemVendorId(item),
+      productId: getProductId(item.productId),
+      name: getItemValue(item, "name"),
+      price: getItemValue(item, "price"),
+      image: getItemValue(item, "image"),
+      status: item.status || shapedOrder.status || "pending",
+    }));
 
   return {
     ...shapedOrder,
@@ -33,6 +58,22 @@ function shapeOrderForVendor(order, vendorId) {
       (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
       0
     ),
+  };
+}
+
+function shapeOrderForBuyer(order) {
+  const shapedOrder = serializeOrder(order);
+
+  return {
+    ...shapedOrder,
+    items: (shapedOrder.items || []).map((item) => ({
+      ...item,
+      vendorId: getItemVendorId(item),
+      name: getItemValue(item, "name"),
+      price: getItemValue(item, "price"),
+      image: getItemValue(item, "image"),
+      status: item.status || shapedOrder.status || "pending",
+    })),
   };
 }
 
@@ -117,24 +158,29 @@ export const createOrder = async (
 
     const order = await Order.findById(createdOrder._id)
       .populate("user", "name email")
-      .populate("items.vendor", "name email");
+      .populate("items.vendor", "name email")
+      .populate({
+        path: "items.productId",
+        select: "name price image vendor",
+        populate: { path: "vendor", select: "name email" },
+      });
 
     // Emit real-time events
     const io = getIo();
 
     // notify buyer
-    io?.to(`user_${req.user.id}`).emit("orderCreated", order);
+    io?.to(`user_${req.user.id}`).emit("orderCreated", shapeOrderForBuyer(order));
 
     // notify vendors involved
     const vendorIds = Array.from(
-      new Set(enrichedItems.map((it) => it.vendor).filter(Boolean))
+      new Set(enrichedItems.map((it) => it.vendor?.toString()).filter(Boolean))
     );
 
     vendorIds.forEach((vid) => {
       io?.to(`vendor_${vid}`).emit("newOrder", shapeOrderForVendor(order, vid));
     });
 
-    res.status(201).json(order);
+    res.status(201).json(shapeOrderForBuyer(order));
 
   } catch (error) {
 
@@ -153,10 +199,23 @@ export const getOrders = async (
 
   try {
 
-    // only return orders that involve this vendor
-    const orders = await Order.find({ "items.vendor": req.user.id })
+    const vendorProductIds = await Product.find({ vendor: req.user.id }).distinct("_id");
+
+    // only return orders that involve this vendor, including older orders whose
+    // item vendor was not copied but whose product still belongs to this vendor.
+    const orders = await Order.find({
+      $or: [
+        { "items.vendor": req.user.id },
+        { "items.productId": { $in: vendorProductIds } },
+      ],
+    })
       .populate("user", "name email")
       .populate("items.vendor", "name email")
+      .populate({
+        path: "items.productId",
+        select: "name price image vendor",
+        populate: { path: "vendor", select: "name email" },
+      })
       .sort({ createdAt: -1 });
 
     res.json(orders.map((order) => shapeOrderForVendor(order, req.user.id)));
@@ -180,9 +239,14 @@ export const getMyOrders = async (
 
     const orders = await Order.find({ user: req.user.id })
       .populate("items.vendor", "name email")
+      .populate({
+        path: "items.productId",
+        select: "name price image vendor",
+        populate: { path: "vendor", select: "name email" },
+      })
       .sort({ createdAt: -1 });
 
-    res.json(orders);
+    res.json(orders.map(shapeOrderForBuyer));
 
   } catch (error) {
 
@@ -199,10 +263,10 @@ export const updateOrderStatus =
 
     try {
 
-      const order =
-        await Order.findById(
-          req.params.id
-        );
+      const order = await Order.findById(req.params.id).populate({
+        path: "items.productId",
+        select: "vendor",
+      });
 
       if (!order) {
 
@@ -212,7 +276,7 @@ export const updateOrderStatus =
       }
 
       const vendorOwnsOrder = order.items.some(
-        (item) => item.vendor?.toString() === req.user.id
+        (item) => getItemVendorId(item) === req.user.id
       );
 
       if (!vendorOwnsOrder) {
@@ -230,7 +294,8 @@ export const updateOrderStatus =
       }
 
       order.items.forEach((item) => {
-        if (item.vendor?.toString() === req.user.id) {
+        if (getItemVendorId(item) === req.user.id) {
+          item.vendor = item.vendor || item.productId?.vendor;
           item.status = requestedStatus;
         }
       });
@@ -241,17 +306,22 @@ export const updateOrderStatus =
 
       const updatedOrder = await Order.findById(order._id)
         .populate("user", "name email")
-        .populate("items.vendor", "name email");
+        .populate("items.vendor", "name email")
+        .populate({
+          path: "items.productId",
+          select: "name price image vendor",
+          populate: { path: "vendor", select: "name email" },
+        });
 
       const vendorOrder = shapeOrderForVendor(updatedOrder, req.user.id);
 
       // emit updates to buyer and vendors
       const io = getIo();
 
-      io?.to(`user_${order.user.toString()}`).emit("orderUpdated", updatedOrder);
+      io?.to(`user_${order.user.toString()}`).emit("orderUpdated", shapeOrderForBuyer(updatedOrder));
 
       const vendorIds = Array.from(
-        new Set(order.items.map((it) => it.vendor?.toString()).filter(Boolean))
+        new Set(order.items.map((it) => getItemVendorId(it)).filter(Boolean))
       );
 
       vendorIds.forEach((vid) => {

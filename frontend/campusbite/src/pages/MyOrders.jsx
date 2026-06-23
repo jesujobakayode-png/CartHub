@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { onEvent, offEvent } from "../utils/socket";
 
+import BackButton from "../components/BackButton";
 import API from "../services/api";
 
 const statusSteps = ["pending", "preparing", "out-for-delivery", "delivered"];
@@ -12,6 +14,24 @@ const statusStyles = {
   delivered: "bg-green-500 text-black",
   cancelled: "bg-red-500 text-white",
 };
+
+function getOrderItemValue(item, field) {
+  return item[field] ?? item.productId?.[field];
+}
+
+function getOrderItemVendor(item) {
+  return item.vendor || item.productId?.vendor;
+}
+
+function getOrderItemVendorId(item) {
+  const vendor = getOrderItemVendor(item);
+  return item.vendorId || (typeof vendor === "string" ? vendor : vendor?._id || vendor?.id);
+}
+
+function getOrderItemVendorName(item) {
+  const vendor = getOrderItemVendor(item);
+  return typeof vendor === "string" ? "Vendor" : vendor?.brandName || vendor?.name || "Vendor";
+}
 
 function MyOrders() {
   const [orders, setOrders] = useState([]);
@@ -59,9 +79,12 @@ function MyOrders() {
   return (
     <div>
       <div className="mb-10">
-        <h1 className="text-3xl font-bold text-stone-950 mb-3 sm:text-4xl">
-          My Orders
-        </h1>
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-3xl font-bold text-stone-950 sm:text-4xl">
+            My Orders
+          </h1>
+          <BackButton />
+        </div>
 
         <p className="text-gray-700">Track your recent orders</p>
       </div>
@@ -113,30 +136,47 @@ function MyOrders() {
               </div>
 
               <div className="space-y-4 mb-6">
-                {order.items.map((item, index) => (
+                {order.items.map((item, index) => {
+                  const itemName = getOrderItemValue(item, "name") || "Product";
+                  const itemImage = getOrderItemValue(item, "image");
+                  const itemPrice = Number(getOrderItemValue(item, "price") || 0);
+                  const itemQuantity = Number(item.quantity || 0);
+                  const vendorId = getOrderItemVendorId(item);
+                  const vendorName = getOrderItemVendorName(item);
+
+                  return (
                   <div
-                    key={`${item.name}-${index}`}
+                    key={`${item.productId?._id || item.productId || itemName}-${index}`}
                     className="flex items-center gap-4 bg-stone-50 rounded-xl p-3 border border-stone-200 transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-sm sm:p-4"
                   >
                     <img
-                      src={item.image || "https://via.placeholder.com/120"}
-                      alt={item.name}
+                      src={itemImage || "https://via.placeholder.com/120"}
+                      alt={itemName}
                       className="w-16 h-16 rounded-lg border border-stone-100 object-cover sm:h-20 sm:w-20"
                     />
 
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-stone-950 truncate">
-                        {item.name}
+                        {itemName}
                       </h3>
 
                       <p className="text-gray-600">Qty: {item.quantity}</p>
+                      {vendorId && (
+                        <Link
+                          to={`/vendor/${vendorId}`}
+                          className="mt-1 inline-flex text-sm font-semibold text-amber-700 hover:text-amber-600"
+                        >
+                          Sold by {vendorName}
+                        </Link>
+                      )}
                     </div>
 
                     <p className="font-bold whitespace-nowrap">
-                      NGN {Number(item.price || 0) * Number(item.quantity || 0)}
+                      NGN {itemPrice * itemQuantity}
                     </p>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="border-t border-stone-200 pt-4 flex justify-between items-center">

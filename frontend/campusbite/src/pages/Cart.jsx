@@ -1,5 +1,6 @@
 import { useContext } from "react";
 
+import BackButton from "../components/BackButton";
 import { CartContext } from "../context/CartContext";
 import CartItem from "../components/CartItem";
 import API from "../services/api";
@@ -70,9 +71,12 @@ function Cart() {
 
   return (
     <div>
-      <h1 className="mb-8 text-3xl font-bold text-stone-950 sm:text-4xl">
-        Your Cart
-      </h1>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-3xl font-bold text-stone-950 sm:text-4xl">
+          Your Cart
+        </h1>
+        <BackButton />
+      </div>
 
       {cart.length === 0 ? (
         <div className="rounded-2xl border border-stone-300 bg-[#fbfaf7] p-8 text-center shadow-sm sm:p-12">

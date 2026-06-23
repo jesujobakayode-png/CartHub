@@ -3,6 +3,10 @@ import jwt from "jsonwebtoken";
 
 let io;
 
+function isVendorRole(role) {
+  return role?.toLowerCase() === "vendor";
+}
+
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
@@ -36,28 +40,28 @@ export const initSocket = (server) => {
     const user = socket.data?.user;
 
     if (user && user.id) {
-      const room = user.role === "vendor" ? `vendor_${user.id}` : `user_${user.id}`;
+      const room = isVendorRole(user.role) ? `vendor_${user.id}` : `user_${user.id}`;
       socket.join(room);
     }
 
     socket.on("join", ({ userId, role, target }) => {
       if (!userId || !role) return;
-      if (role === "vendor" && socket.data.user.role !== "vendor") {
+      if (isVendorRole(role) && !isVendorRole(socket.data.user.role)) {
         // Reject non-vendors from joining vendor rooms
         return;
       }
 
-      const room = role === "vendor" ? `vendor_${userId}` : `user_${userId}`;
+      const room = isVendorRole(role) ? `vendor_${userId}` : `user_${userId}`;
       socket.join(room);
     });
 
     socket.on("leave", ({ userId, role }) => {
       if (!userId || !role) return;
-      if (role === "vendor" && socket.data.user.role !== "vendor") {
+      if (isVendorRole(role) && !isVendorRole(socket.data.user.role)) {
         return;
       }
 
-      const room = role === "vendor" ? `vendor_${userId}` : `user_${userId}`;
+      const room = isVendorRole(role) ? `vendor_${userId}` : `user_${userId}`;
       socket.leave(room);
     });
 

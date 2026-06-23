@@ -39,7 +39,11 @@ function App() {
               <Dashboard />
             </ProtectedRoute>
           } />
-          <Route path="/orders" element={<Orders />} />
+          <Route path="/orders" element={
+            <ProtectedRoute user={user} loading={loading}>
+              <Orders />
+            </ProtectedRoute>
+          } />
           <Route path="/vendor-dashboard" element={
             <ProtectedRoute user={user} role="vendor" loading={loading}>
               <VendorDashboard />

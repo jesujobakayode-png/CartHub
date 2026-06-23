@@ -41,7 +41,7 @@ function Login() {
         });
       }
 
-      if (res.data.user.role === "vendor") {
+      if (res.data.user.role?.toLowerCase() === "vendor") {
         navigate("/vendor-dashboard");
       } else {
         navigate("/");
