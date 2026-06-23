@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { useNotification } from "../context/NotificationContext";
 import { FaBell, FaCheckCircle, FaInbox } from "react-icons/fa";
+
+import { useNotification } from "../context/NotificationContext";
 
 function Notifications() {
   const {
@@ -87,7 +88,8 @@ function Notifications() {
                     </div>
                     {notification.order && (
                       <p className="text-sm text-stone-600">
-                        Order #{notification.order._id?.slice(-6)} • {notification.order.status?.replaceAll("-", " ")}
+                        Order #{notification.order._id?.slice(-6)} -{" "}
+                        {(notification.order.vendorStatus || notification.order.status)?.replaceAll("-", " ")}
                       </p>
                     )}
                   </div>

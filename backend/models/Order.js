@@ -22,6 +22,17 @@ const orderSchema = new mongoose.Schema(
         price: Number,
         quantity: Number,
         image: String,
+        status: {
+          type: String,
+          enum: [
+            "pending",
+            "preparing",
+            "out-for-delivery",
+            "delivered",
+            "cancelled",
+          ],
+          default: "pending",
+        },
       },
     ],
 

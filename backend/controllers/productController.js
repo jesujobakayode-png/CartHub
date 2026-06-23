@@ -1,14 +1,29 @@
 import Product from "../models/Product.js";
 
+function sameId(left, right) {
+  return left?.toString() === right?.toString();
+}
+
+function sanitizeProductInput(body) {
+  const allowedFields = ["name", "price", "category", "description", "image"];
+
+  return allowedFields.reduce((data, field) => {
+    if (Object.prototype.hasOwnProperty.call(body, field)) {
+      data[field] = body[field];
+    }
+
+    return data;
+  }, {});
+}
+
 export const getVendorProducts =
   async (req, res) => {
 
     try {
 
-      const products = await Product.find({ vendor: req.user.id }).populate(
-        "vendor",
-        "name email"
-      );
+      const products = await Product.find({ vendor: req.user.id })
+        .populate("vendor", "name email")
+        .sort({ createdAt: -1 });
 
       res.json(products);
 
@@ -64,7 +79,7 @@ export const createProduct = async (req, res) => {
   try {
 
     const product = await Product.create({
-      ...req.body,
+      ...sanitizeProductInput(req.body),
       vendor: req.user.id,
     });
 
@@ -105,8 +120,7 @@ export const updateProduct =
 
       // OWNER CHECK
       if (
-        product.vendor?.toString() !==
-        req.user.id
+        !sameId(product.vendor, req.user.id)
       ) {
 
         return res.status(403).json({
@@ -118,7 +132,7 @@ export const updateProduct =
       const updatedProduct =
         await Product.findByIdAndUpdate(
           req.params.id,
-          req.body,
+          sanitizeProductInput(req.body),
           { new: true }
         ).populate("vendor", "name email");
 
@@ -153,8 +167,7 @@ export const deleteProduct =
 
       // OWNER CHECK
       if (
-        product.vendor?.toString() !==
-        req.user.id
+        !sameId(product.vendor, req.user.id)
       ) {
 
         return res.status(403).json({

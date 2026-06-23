@@ -11,15 +11,23 @@ import { Bar, Pie } from "react-chartjs-2";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
+function getOrderStatus(order) {
+  return order.vendorStatus || order.items?.[0]?.status || order.status || "pending";
+}
+
+function getOrderRevenue(order) {
+  return order.vendorTotalPrice ?? order.totalPrice ?? 0;
+}
+
 function DashboardAnalytics({ orders = [], products = [] }) {
   const totalRevenue = orders
-    .filter((order) => order.status === "delivered")
-    .reduce((acc, order) => acc + (order.totalPrice || 0), 0);
+    .filter((order) => getOrderStatus(order) === "delivered")
+    .reduce((acc, order) => acc + getOrderRevenue(order), 0);
 
   const totalOrders = orders.length;
-  const pendingOrders = orders.filter((o) => o.status === "pending").length;
-  const preparingOrders = orders.filter((o) => o.status === "preparing").length;
-  const deliveredOrders = orders.filter((o) => o.status === "delivered").length;
+  const pendingOrders = orders.filter((o) => getOrderStatus(o) === "pending").length;
+  const preparingOrders = orders.filter((o) => getOrderStatus(o) === "preparing").length;
+  const deliveredOrders = orders.filter((o) => getOrderStatus(o) === "delivered").length;
 
   const revenueData = {
     labels: ["Revenue"],

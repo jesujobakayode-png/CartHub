@@ -25,15 +25,21 @@ function getVendorItems(order, userId) {
   const items = Array.isArray(order.items) ? order.items : [];
 
   if (!userId) {
-    return items;
+    return [];
   }
 
-  const sellerItems = items.filter((item) => {
+  return items.filter((item) => {
     const vendorId = typeof item.vendor === "string" ? item.vendor : item.vendor?._id;
     return vendorId === userId;
   });
+}
 
-  return sellerItems.length > 0 ? sellerItems : items;
+function getOrderStatus(order) {
+  return order.vendorStatus || order.items?.[0]?.status || order.status || "pending";
+}
+
+function getCurrentUserId(user) {
+  return user?.id || user?._id || user?.user?.id || user?.user?._id;
 }
 
 function orderMatchesSearch(order, vendorItems, searchTerm) {
@@ -45,7 +51,7 @@ function orderMatchesSearch(order, vendorItems, searchTerm) {
 
   const searchable = [
     order._id,
-    order.status,
+    getOrderStatus(order),
     order.user?.name,
     order.user?.email,
     ...vendorItems.map((item) => item.name),
@@ -65,6 +71,7 @@ function VendorOrders() {
   const [orderClass, setOrderClass] = useState("all");
   const [orderSearch, setOrderSearch] = useState("");
   const [submittedOrderSearch, setSubmittedOrderSearch] = useState("");
+  const currentUserId = getCurrentUserId(user);
 
   const fetchOrders = async () => {
     try {
@@ -117,9 +124,9 @@ function VendorOrders() {
 
   const activeOrderClass = orderClasses.find((item) => item.key === orderClass);
   const visibleOrders = orders.filter((order) => {
-    const vendorItems = getVendorItems(order, user?.id);
+    const vendorItems = getVendorItems(order, currentUserId);
     const matchesClass =
-      !activeOrderClass?.statuses.length || activeOrderClass.statuses.includes(order.status);
+      !activeOrderClass?.statuses.length || activeOrderClass.statuses.includes(getOrderStatus(order));
 
     return matchesClass && orderMatchesSearch(order, vendorItems, submittedOrderSearch);
   });
@@ -152,7 +159,7 @@ function VendorOrders() {
         <div className="flex flex-wrap gap-2">
           {orderClasses.map((item) => {
             const count = item.statuses.length
-              ? orders.filter((order) => item.statuses.includes(order.status)).length
+              ? orders.filter((order) => item.statuses.includes(getOrderStatus(order))).length
               : orders.length;
 
             return (
@@ -208,7 +215,8 @@ function VendorOrders() {
       ) : (
         <div className="space-y-6">
           {visibleOrders.map((order) => {
-            const vendorItems = getVendorItems(order, user?.id);
+            const vendorItems = getVendorItems(order, currentUserId);
+            const orderStatus = getOrderStatus(order);
             const sellerTotal = vendorItems.reduce(
               (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
               0
@@ -235,10 +243,10 @@ function VendorOrders() {
                         </span>
                       </div>
                       <select
-                        value={order.status}
+                        value={orderStatus}
                         onChange={(e) => updateStatus(order._id, e.target.value)}
                         className={`rounded-full border-2 px-4 py-2 text-sm font-semibold capitalize transition ${
-                          statusStyles[order.status] || "border-stone-200 bg-stone-50"
+                          statusStyles[orderStatus] || "border-stone-200 bg-stone-50"
                         }`}
                       >
                         <option value="pending">Pending</option>
@@ -310,7 +318,7 @@ function VendorOrders() {
                     <div>
                       <p className="text-xs font-semibold uppercase text-stone-700">Status</p>
                       <p className="mt-1 text-sm font-semibold capitalize text-stone-950">
-                        {order.status?.replaceAll("-", " ")}
+                        {orderStatus.replaceAll("-", " ")}
                       </p>
                     </div>
                     <div>

@@ -42,6 +42,16 @@ function formatUser(user) {
   };
 }
 
+function cleanText(value) {
+  return typeof value === "string" ? value.trim() : value;
+}
+
+function cleanOptionalText(value) {
+  const cleaned = cleanText(value);
+
+  return cleaned == null ? "" : cleaned;
+}
+
 // REGISTER
 export const registerUser = async (req, res) => {
   try {
@@ -134,9 +144,17 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const { email } = req.body;
+    const email = cleanText(req.body.email);
 
-    if (email && email !== user.email) {
+    if (Object.prototype.hasOwnProperty.call(req.body, "name") && !cleanText(req.body.name)) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+
+    if (Object.prototype.hasOwnProperty.call(req.body, "email") && !email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    if (email && email.toLowerCase() !== user.email.toLowerCase()) {
       const emailOwner = await User.findOne({ email });
 
       if (emailOwner && emailOwner._id.toString() !== user._id.toString()) {
@@ -151,16 +169,16 @@ export const updateProfile = async (req, res) => {
 
       if (field === "socialMedia" && req.body.socialMedia) {
         user.socialMedia = {
-          instagram: req.body.socialMedia.instagram || "",
-          twitter: req.body.socialMedia.twitter || "",
-          facebook: req.body.socialMedia.facebook || "",
-          website: req.body.socialMedia.website || "",
+          instagram: cleanOptionalText(req.body.socialMedia.instagram),
+          twitter: cleanOptionalText(req.body.socialMedia.twitter),
+          facebook: cleanOptionalText(req.body.socialMedia.facebook),
+          website: cleanOptionalText(req.body.socialMedia.website),
         };
         return;
       }
 
       if (Object.prototype.hasOwnProperty.call(req.body, field)) {
-        user[field] = req.body[field];
+        user[field] = cleanOptionalText(req.body[field]);
       }
     });
 
@@ -168,6 +186,14 @@ export const updateProfile = async (req, res) => {
 
     res.json(formatUser(updatedUser));
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "Email is already in use" });
+    }
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: error.message });
+    }
+
     res.status(500).json({ message: error.message });
   }
 };
@@ -175,7 +201,9 @@ export const updateProfile = async (req, res) => {
 // Public: list vendors
 export const listVendors = async (req, res) => {
   try {
-    const vendors = await User.find({ role: "vendor" }).limit(200);
+    const vendors = await User.find({ role: /^vendor$/i })
+      .sort({ brandName: 1, name: 1 })
+      .limit(200);
 
     res.json(vendors.map(formatUser));
   } catch (error) {
@@ -189,7 +217,7 @@ export const getVendorById = async (req, res) => {
     const { id } = req.params;
     const user = await User.findById(id);
 
-    if (!user || user.role !== "vendor") {
+    if (!user || user.role?.toLowerCase() !== "vendor") {
       return res.status(404).json({ message: "Vendor not found" });
     }
 

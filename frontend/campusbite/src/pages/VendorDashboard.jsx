@@ -39,15 +39,17 @@ function getVendorItems(order, userId) {
   const items = Array.isArray(order.items) ? order.items : [];
 
   if (!userId) {
-    return items;
+    return [];
   }
 
-  const sellerItems = items.filter((item) => {
+  return items.filter((item) => {
     const vendorId = typeof item.vendor === "string" ? item.vendor : item.vendor?._id;
     return vendorId === userId;
   });
+}
 
-  return sellerItems.length > 0 ? sellerItems : items;
+function getOrderStatus(order) {
+  return order.vendorStatus || order.items?.[0]?.status || order.status || "pending";
 }
 
 function orderMatchesSearch(order, vendorItems, searchTerm) {
@@ -59,7 +61,7 @@ function orderMatchesSearch(order, vendorItems, searchTerm) {
 
   const searchable = [
     order._id,
-    order.status,
+    getOrderStatus(order),
     order.user?.name,
     order.user?.email,
     ...vendorItems.map((item) => item.name),
@@ -80,7 +82,9 @@ function getCurrentUserRole(user) {
 }
 
 function getProductVendorId(product) {
-  return typeof product.vendor === "string" ? product.vendor : product.vendor?._id;
+  const vendorId = typeof product.vendor === "string" ? product.vendor : product.vendor?._id;
+
+  return vendorId?.toString();
 }
 
 function VendorDashboard() {
@@ -118,7 +122,7 @@ function VendorDashboard() {
         const res = await API.get("/products");
         const productList = Array.isArray(res.data) ? res.data : [];
         setProducts(
-          productList.filter((product) => getProductVendorId(product) === currentUserId)
+          productList.filter((product) => getProductVendorId(product) === currentUserId?.toString())
         );
       } catch (fallbackError) {
         console.log(fallbackError);
@@ -187,12 +191,12 @@ function VendorDashboard() {
     (sum, p) => sum + Number(p.price || 0),
     0
   );
-  const pendingOrders = orders.filter((order) => order.status === "pending").length;
+  const pendingOrders = orders.filter((order) => getOrderStatus(order) === "pending").length;
   const activeOrderClass = orderClasses.find((item) => item.key === orderClass);
   const visibleOrders = orders.filter((order) => {
     const vendorItems = getVendorItems(order, currentUserId);
     const matchesClass =
-      !activeOrderClass?.statuses.length || activeOrderClass.statuses.includes(order.status);
+      !activeOrderClass?.statuses.length || activeOrderClass.statuses.includes(getOrderStatus(order));
 
     return matchesClass && orderMatchesSearch(order, vendorItems, submittedOrderSearch);
   });
@@ -447,7 +451,7 @@ function VendorDashboard() {
             <div className="flex flex-wrap gap-2">
               {orderClasses.map((item) => {
                 const count = item.statuses.length
-                  ? orders.filter((order) => item.statuses.includes(order.status)).length
+                  ? orders.filter((order) => item.statuses.includes(getOrderStatus(order))).length
                   : orders.length;
 
                 return (
@@ -497,6 +501,7 @@ function VendorDashboard() {
           ) : (
             visibleOrders.map((order) => {
               const vendorItems = getVendorItems(order, currentUserId);
+              const orderStatus = getOrderStatus(order);
               const sellerTotal = vendorItems.reduce(
                 (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
                 0
@@ -524,13 +529,13 @@ function VendorDashboard() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                       <span
                         className={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold capitalize ${
-                          statusStyles[order.status] || "border-stone-200 bg-stone-100 text-stone-700"
+                          statusStyles[orderStatus] || "border-stone-200 bg-stone-100 text-stone-700"
                         }`}
                       >
-                        {order.status?.replaceAll("-", " ") || "pending"}
+                        {orderStatus.replaceAll("-", " ")}
                       </span>
                       <select
-                        value={order.status}
+                        value={orderStatus}
                         onChange={(e) => updateStatus(order._id, e.target.value)}
                         className="min-h-10 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
                       >

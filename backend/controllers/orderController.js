@@ -2,6 +2,66 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { getIo } from "../utils/socket.js";
 
+const orderStatuses = [
+  "pending",
+  "preparing",
+  "out-for-delivery",
+  "delivered",
+  "cancelled",
+];
+
+function getVendorId(value) {
+  return typeof value === "string" ? value : value?._id?.toString() || value?.toString();
+}
+
+function serializeOrder(order) {
+  return typeof order.toObject === "function" ? order.toObject() : order;
+}
+
+function shapeOrderForVendor(order, vendorId) {
+  const shapedOrder = serializeOrder(order);
+  const vendorKey = vendorId?.toString();
+  const vendorItems = (shapedOrder.items || []).filter(
+    (item) => getVendorId(item.vendor) === vendorKey
+  );
+
+  return {
+    ...shapedOrder,
+    items: vendorItems,
+    vendorStatus: vendorItems[0]?.status || shapedOrder.status || "pending",
+    vendorTotalPrice: vendorItems.reduce(
+      (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+      0
+    ),
+  };
+}
+
+function calculateOrderStatus(items = []) {
+  const statuses = items.map((item) => item.status || "pending");
+
+  if (statuses.length === 0) {
+    return "pending";
+  }
+
+  if (statuses.every((status) => status === "cancelled")) {
+    return "cancelled";
+  }
+
+  if (statuses.every((status) => status === "delivered" || status === "cancelled")) {
+    return "delivered";
+  }
+
+  if (statuses.includes("out-for-delivery")) {
+    return "out-for-delivery";
+  }
+
+  if (statuses.includes("preparing")) {
+    return "preparing";
+  }
+
+  return "pending";
+}
+
 
 // CREATE ORDER
 export const createOrder = async (
@@ -26,6 +86,7 @@ export const createOrder = async (
               price: it.price,
               quantity: it.quantity,
               image: it.image,
+              status: "pending",
             };
           } catch (err) {
             return {
@@ -33,6 +94,7 @@ export const createOrder = async (
               price: it.price,
               quantity: it.quantity,
               image: it.image,
+              status: "pending",
             };
           }
         }
@@ -42,6 +104,7 @@ export const createOrder = async (
           price: it.price,
           quantity: it.quantity,
           image: it.image,
+          status: "pending",
         };
       })
     );
@@ -68,7 +131,7 @@ export const createOrder = async (
     );
 
     vendorIds.forEach((vid) => {
-      io?.to(`vendor_${vid}`).emit("newOrder", order);
+      io?.to(`vendor_${vid}`).emit("newOrder", shapeOrderForVendor(order, vid));
     });
 
     res.status(201).json(order);
@@ -93,9 +156,10 @@ export const getOrders = async (
     // only return orders that involve this vendor
     const orders = await Order.find({ "items.vendor": req.user.id })
       .populate("user", "name email")
+      .populate("items.vendor", "name email")
       .sort({ createdAt: -1 });
 
-    res.json(orders);
+    res.json(orders.map((order) => shapeOrderForVendor(order, req.user.id)));
 
   } catch (error) {
 
@@ -157,13 +221,29 @@ export const updateOrderStatus =
         });
       }
 
-      order.status = req.body.status || order.status;
+      const requestedStatus = req.body.status || order.status;
+
+      if (!orderStatuses.includes(requestedStatus)) {
+        return res.status(400).json({
+          message: "Invalid order status",
+        });
+      }
+
+      order.items.forEach((item) => {
+        if (item.vendor?.toString() === req.user.id) {
+          item.status = requestedStatus;
+        }
+      });
+
+      order.status = calculateOrderStatus(order.items);
 
       await order.save();
 
       const updatedOrder = await Order.findById(order._id)
         .populate("user", "name email")
         .populate("items.vendor", "name email");
+
+      const vendorOrder = shapeOrderForVendor(updatedOrder, req.user.id);
 
       // emit updates to buyer and vendors
       const io = getIo();
@@ -175,10 +255,10 @@ export const updateOrderStatus =
       );
 
       vendorIds.forEach((vid) => {
-        io?.to(`vendor_${vid}`).emit("orderUpdated", updatedOrder);
+        io?.to(`vendor_${vid}`).emit("orderUpdated", shapeOrderForVendor(updatedOrder, vid));
       });
 
-      res.json(updatedOrder);
+      res.json(vendorOrder);
 
     } catch (error) {
 

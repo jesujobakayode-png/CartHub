@@ -54,7 +54,7 @@ function readSavedNotifications(storageKey) {
 
 function createNotification(payload, user) {
   const orderId = payload.order?._id || "unknown";
-  const status = payload.order?.status || "pending";
+  const status = payload.order?.vendorStatus || payload.order?.status || "pending";
   const type = payload.type || "notification";
   const audience = payload.audience || user?.role || "buyer";
   const createdAt = payload.createdAt || payload.order?.updatedAt || payload.order?.createdAt || new Date().toISOString();
