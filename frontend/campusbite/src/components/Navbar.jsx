@@ -65,7 +65,7 @@ function Navbar() {
             className="flex min-w-0 items-center gap-2 text-xl font-bold text-amber-600 sm:text-2xl"
           >
             <FaStore className="shrink-0" />
-            <span className="truncate">CampusBite</span>
+            <span className="truncate">CartHub</span>
           </Link>
 
           {user && (

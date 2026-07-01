@@ -35,7 +35,7 @@ function formatStatus(status) {
 }
 
 function getStorageKey(user) {
-  return user?.id ? `campusbite_notifications_${user.role}_${user.id}` : null;
+  return user?.id ? `carthub_notifications_${user.role}_${user.id}` : null;
 }
 
 function readSavedNotifications(storageKey) {

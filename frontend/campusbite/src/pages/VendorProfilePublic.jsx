@@ -116,7 +116,7 @@ function VendorProfilePublic() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <ProfileStat label="Profile Complete" value={`${completion}%`} />
             <ProfileStat label="Category" value={profile.businessCategory || "Not set"} />
-            <ProfileStat label="Campus" value={profile.campus || "Not set"} />
+            <ProfileStat label="Service Area" value={profile.campus || "Not set"} />
           </div>
         </div>
       </section>

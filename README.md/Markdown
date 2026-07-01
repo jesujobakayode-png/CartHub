@@ -1,6 +1,8 @@
-# CampusBite
+# CartHub
 
-A campus vendor ordering system built with:
+A multi-vendor marketplace that connects buyers with local stores, restaurants, and service providers through one seamless platform.
+
+Built with:
 - React
 - Tailwind CSS
 - Express.js

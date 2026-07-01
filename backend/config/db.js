@@ -1,9 +1,23 @@
 import mongoose from "mongoose";
 
 let connectionPromise;
+let listenersRegistered = false;
 
 const connectDB = async () => {
   try {
+    if (!listenersRegistered) {
+      mongoose.connection.on("disconnected", () => {
+        connectionPromise = undefined;
+        console.warn("MongoDB disconnected");
+      });
+
+      mongoose.connection.on("error", (error) => {
+        console.error("MongoDB error:", error.message);
+      });
+
+      listenersRegistered = true;
+    }
+
     if (mongoose.connection.readyState === 1) {
       return mongoose.connection;
     }

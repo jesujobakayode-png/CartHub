@@ -2,6 +2,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
+import { sendVerificationEmail, sendWelcomeEmail } from "../services/emailService.js";
+import { v4 as uuidv4 } from "uuid";
 
 const profileFields = [
   "name",
@@ -57,7 +59,14 @@ function cleanOptionalText(value) {
 // REGISTER
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const verificationToken = uuidv4();
+
+    const { name, password, role } = req.body;
+    const email = cleanText(req.body.email)?.toLowerCase();
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required" });
+    }
 
     const userExists = await User.findOne({ email });
 
@@ -72,10 +81,17 @@ export const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       role,
+      verificationToken,
     });
+      
+    await sendVerificationEmail(
+      user.email,
+      user.name,
+      verificationToken
+    );
 
     res.status(201).json({
-      message: "User created successfully",
+      message: "Registration successful. Please check your email to verify your account.",
     });
 
   } catch (error) {
@@ -83,11 +99,15 @@ export const registerUser = async (req, res) => {
   }
 };
 
-
 // LOGIN
 export const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = cleanText(req.body.email)?.toLowerCase();
+    const { password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
 
     const user = await User.findOne({ email });
 
@@ -99,6 +119,12 @@ export const loginUser = async (req, res) => {
 
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
+    }
+    if (user.isVerified === false) {
+      return res.status(401).json({
+        message:
+          "Your email has not been verified. Please check your inbox before logging in.",
+      });
     }
 
     if (!process.env.JWT_SECRET) {
@@ -121,6 +147,48 @@ export const loginUser = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const verifyEmail = async (req, res) => {
+  try {
+
+    const token = req.query.token || req.params.token;
+
+    if (!token) {
+      return res.status(400).json({
+        message: "Verification token is required",
+      });
+    }
+
+    const user = await User.findOne({
+      verificationToken: token,
+    });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({
+          message: "Invalid verification link",
+        });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+
+    await user.save();
+    await sendWelcomeEmail(user.email, user.name);
+
+    res.json({
+      message: "Email verified successfully",
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message,
+    });
+
   }
 };
 

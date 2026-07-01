@@ -1,30 +1,37 @@
+import "./config/env.js";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
-import { fileURLToPath } from "url";
-import path from "path";
 
 import connectDB from "./config/db.js";
 import productRoutes from "./routes/productRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-dotenv.config({ path: path.join(__dirname, ".env") });
-
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://carthub-one.vercel.app",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: "*"
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
 }));
 
 app.use(express.json());
 
 app.get("/", (req, res) => {
   res.json({
-    message: "CampusBite API is running",
+    message: "CartHub API is running",
     routes: {
       products: "/api/products",
       orders: "/api/orders",
@@ -35,7 +42,7 @@ app.get("/", (req, res) => {
 
 app.get("/api", (req, res) => {
   res.json({
-    message: "CampusBite API is running",
+    message: "CartHub API is running",
     routes: {
       products: "/api/products",
       orders: "/api/orders",

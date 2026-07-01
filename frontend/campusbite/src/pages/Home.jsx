@@ -50,10 +50,12 @@ function Home() {
     <div>
       <div className="mb-6 rounded-2xl border border-stone-300 bg-[#fbfaf7] p-5 shadow-sm sm:mb-8 sm:p-6">
         <h1 className="mb-3 text-3xl font-bold text-stone-950 sm:text-4xl">
-          Campus Marketplace
+          CartHub Marketplace
         </h1>
 
-        <p className="text-gray-700">Discover useful products and services around campus</p>
+        <p className="text-gray-700">
+          Connect with local stores, restaurants, and service providers through one seamless platform.
+        </p>
       </div>
 
       <div className="mb-5 rounded-2xl border border-stone-300 bg-[#fbfaf7] p-3 shadow-sm sm:mb-6 sm:p-4">

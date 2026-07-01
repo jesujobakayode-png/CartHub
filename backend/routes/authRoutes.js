@@ -2,6 +2,7 @@ import express from "express";
 import {
   getProfile,
   loginUser,
+  verifyEmail,
   registerUser,
   updateProfile,
   listVendors,
@@ -13,6 +14,8 @@ const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.get("/verify-email", verifyEmail);
+router.get("/verify/:token", verifyEmail);
 router.get("/me", protect, getProfile);
 router.put("/profile", protect, updateProfile);
 router.get("/vendors", listVendors);

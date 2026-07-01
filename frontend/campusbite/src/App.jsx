@@ -14,6 +14,7 @@ import Notifications from "./pages/Notifications";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import VerifyEmail from "./pages/VerifyEmail";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import { useContext } from "react";
@@ -56,6 +57,8 @@ function App() {
           } />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/verify/:token" element={<VerifyEmail />} />
           <Route path="/vendor/orders" element={
             <ProtectedRoute
               user={user}

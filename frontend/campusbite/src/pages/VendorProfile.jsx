@@ -179,7 +179,7 @@ function VendorProfile() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <ProfileStat label="Profile Complete" value={`${completion}%`} />
             <ProfileStat label="Category" value={profile.businessCategory || "Not set"} />
-            <ProfileStat label="Campus" value={profile.campus || "Not set"} />
+            <ProfileStat label="Service Area" value={profile.campus || "Not set"} />
           </div>
         </div>
       </section>
@@ -206,7 +206,7 @@ function VendorProfile() {
               name="businessCategory"
               value={profile.businessCategory}
               onChange={handleChange}
-              placeholder="Meals, snacks, drinks, groceries..."
+              placeholder="Restaurants, retail, groceries, services..."
             />
             <label className="block text-sm font-semibold text-stone-700">
               Upload Logo
@@ -254,11 +254,11 @@ function VendorProfile() {
               placeholder="+234..."
             />
             <FormField
-              label="Campus"
+              label="Service Area"
               name="campus"
               value={profile.campus}
               onChange={handleChange}
-              placeholder="University or campus area"
+              placeholder="Neighborhood, city, or delivery area"
             />
             <TextAreaField
               label="Address"
